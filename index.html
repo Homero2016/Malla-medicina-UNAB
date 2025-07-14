@@ -1,16 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Malla Interactiva Medicina</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malla Medicina</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="loader.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <h1>Malla Interactiva - Medicina</h1>
-  <div id="malla"></div>
-  <div id="info-box" class="hidden"></div>
-  <script src="script.js"></script>
+  <div id="loader" class="loader">
+    <img src="images/loader.gif" alt="Cargando...">
+  </div>
+  <div id="app" style="display:none;">
+    <h1>Malla Medicina</h1>
+    <button id="loginBtn">Login con Google</button>
+    <div id="resumen"></div>
+    <div id="malla"></div>
+  </div>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
