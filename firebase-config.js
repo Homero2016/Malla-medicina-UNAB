@@ -5,5 +5,4 @@ export const firebaseConfig = {
   storageBucket: "malla-medicina-unab.firebasestorage.app",
   messagingSenderId: "624124095109",
   appId: "1:624124095109:web:83649db993b8f570afd7ec",
-  measurementId: "G-QR06PHWGZX"
 };
