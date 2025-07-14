@@ -1,8 +1,9 @@
 export const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_BUCKET",
-  messagingSenderId: "TU_MESSAGING_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyDbz-PJ9OSELTu1tTg2hSPAST8VouWqeEc",
+  authDomain: "malla-medicina-unab.firebaseapp.com",
+  projectId: "malla-medicina-unab",
+  storageBucket: "malla-medicina-unab.firebasestorage.app",
+  messagingSenderId: "624124095109",
+  appId: "1:624124095109:web:83649db993b8f570afd7ec",
+  measurementId: "G-QR06PHWGZX"
 };
