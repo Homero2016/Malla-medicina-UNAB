@@ -1,0 +1,26 @@
+[
+  {
+    "codigo": "BIO130",
+    "nombre": "Biología Celular",
+    "creditos": 4,
+    "semestre": 1,
+    "requisitos": [],
+    "color": "#3498db"
+  },
+  {
+    "codigo": "QUI109",
+    "nombre": "Química General",
+    "creditos": 6,
+    "semestre": 1,
+    "requisitos": [],
+    "color": "#e67e22"
+  },
+  {
+    "codigo": "MED016",
+    "nombre": "Introducción a la Medicina I",
+    "creditos": 4,
+    "semestre": 1,
+    "requisitos": [],
+    "color": "#9b59b6"
+  }
+]
