@@ -1,34 +1,342 @@
+/* Reset y estilos base */
 body {
-  font-family: sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f4f4f4;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  box-sizing: border-box;
 }
+
+main {
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Contenedor login */
+#login-container {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 40px 60px 60px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(8.5px);
+  -webkit-backdrop-filter: blur(8.5px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  margin: auto;
+  animation: fadeIn 1s ease forwards;
+}
+
+#login-container h1 {
+  font-weight: 700;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+  letter-spacing: 1.2px;
+  text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
+}
+
+#loginBtn {
+  background: #ffffff;
+  color: #2575fc;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
+  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+#loginBtn:hover {
+  background: #1a53d7;
+  color: white;
+  transform: scale(1.05);
+}
+
+#login-footer {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+  font-style: italic;
+  user-select: none;
+}
+
+/* App */
+#app {
+  background: white;
+  color: #333;
+  max-width: 1100px;
+  width: 100%;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  animation: fadeIn 0.8s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  margin: 20px auto;
+  box-sizing: border-box;
+}
+
+#resumen {
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #2575fc;
+  text-align: center;
+}
+
 #malla {
+  max-height: 65vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 10px;
+}
+
+/* Semestres y ramos */
+.semestre {
+  margin: 30px auto;
+  background: #fff;
+  border-left: 6px solid #3498db;
+  padding: 10px;
+  box-shadow: 0 0 10px #ddd;
+  color: #333;
+  border-radius: 6px;
+}
+
+.semestre h3 {
+  margin-top: 0;
+  color: #3498db;
+  text-align: left;
+  font-weight: 700;
+}
+
+.malla-grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  padding: 20px;
+  gap: 10px;
+  justify-content: flex-start;
 }
+
 .ramo {
   border-radius: 8px;
-  margin: 8px;
   padding: 10px;
   color: #fff;
   cursor: pointer;
-  width: 140px;
+  width: 160px;
   text-align: center;
   font-size: 14px;
-  transition: 0.3s;
+  position: relative;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  word-wrap: break-word;
 }
+
+.ramo:hover {
+  transform: scale(1.03);
+}
+
+/* Estados de ramos */
 .bloqueado {
-  background: #ccc;
+  background: #ccc !important;
   text-decoration: line-through;
   cursor: not-allowed;
+  opacity: 0.5;
 }
-.desbloqueado {
-  opacity: 1;
-}
+
 .aprobado {
   background: #2ecc71 !important;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.pendiente-anual {
+  border: 2px dashed #ffa500;
+  opacity: 0.85;
+  background: #fff3cd !important;
+  color: #333 !important;
+}
+
+.pendiente-anual::after {
+  content: "Pendiente (anual)";
+  font-size: 0.7em;
+  color: #ffa500;
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+}
+
+.desbloqueado {
+  opacity: 1;
+  filter: brightness(1.1);
+  border: 2px solid white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* Burbuja de créditos aprobados - fija y flotante */
+#contadorCreditos {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #2ecc71;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 10001;
+  transition: all 0.3s ease-in-out;
+}
+
+#contadorCreditos:hover {
+  transform: scale(1.05);
+  cursor: default;
+}
+
+/* Burbuja de leyenda - fija y visible solo tras login */
+#leyenda {
+  position: fixed;
+  bottom: 90px; /* Por encima de créditos */
+  right: 20px;
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  font-size: 14px;
+  max-width: 220px;
+  text-align: left;
+  color: #333;
+  z-index: 10000;
+  display: none; /* Se activa vía JS después de login */
+}
+
+#leyenda h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+  text-align: center;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.leyenda-cuadro {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+/* Colores leyenda */
+.c-aprobado { background: #2ecc71; }
+.c-desbloqueado { background: #5dade2; }
+.c-bloqueado { background: #ccc; }
+.c-anual { background: #fff3cd; border: 1px dashed #ffa500; }
+
+/* Nueva burbuja para próximos ramos desbloqueados (siguiente semestre) */
+#proximosRamos {
+  position: fixed;
+  bottom: 160px; /* Más arriba que la leyenda */
+  right: 20px;
+  background-color: #5dade2;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  font-size: 14px;
+  max-width: 240px;
+  z-index: 10002;
+  display: none; /* Mostrar con JS cuando sea necesario */
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .ramo {
+    width: 45vw;
+    font-size: 13px;
+  }
+  #app {
+    padding: 20px;
+  }
+
+  /* Adaptar burbujas para pantallas más chicas */
+  #contadorCreditos, #leyenda, #proximosRamos {
+    right: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  #leyenda {
+    bottom: 80px;
+    max-width: 180px;
+  }
+
+  #proximosRamos {
+    bottom: 140px;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ramo {
+    width: 90vw;
+    font-size: 14px;
+  }
+  #login-container {
+    padding: 30px 20px 50px;
+    width: 95%;
+  }
+  #login-container h1 {
+    font-size: 2rem;
+  }
+  #loginBtn {
+    padding: 15px 0;
+    font-size: 1.2rem;
+  }
+  #login-footer {
+    font-size: 0.7rem;
+    bottom: 10px;
+  }
+
+  /* En móvil, las burbujas se ubican un poco más centradas */
+  #contadorCreditos, #leyenda, #proximosRamos {
+    right: 5vw;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  #leyenda {
+    bottom: 75px;
+    max-width: 90vw;
+    border-radius: 10px;
+  }
+
+  #proximosRamos {
+    bottom: 130px;
+    max-width: 90vw;
+    border-radius: 10px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
