@@ -1,29 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Malla Medicina</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="loader.css">
+    <meta charset="UTF-8">
+    <title>Malla Curricular</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { background-color: #f0f0f0; padding: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #e0e0e0; }
+    </style>
 </head>
 <body>
-  <div id="loader" class="loader">
-    <img src="images/loader.gif" alt="Cargando...">
-  </div>
-  <div id="app" style="display:none;">
-    <h1>Malla Medicina</h1>
-    <button id="loginBtn">Login con Google</button>
-    <div id="resumen"></div>
-    <div id="malla"></div>
-  </div>
+    <h1>Malla Curricular</h1>
+    <p>Este archivo muestra la malla curricular cargada desde <code>malla.json</code>.</p>
+    <script>
+        fetch('malla.json')
+            .then(response => response.json())
+            .then(data => {
+                const semestres = {};
+                data.forEach(asignatura => {
+                    const semestre = asignatura.semestre;
+                    if (!semestres[semestre]) semestres[semestre] = [];
+                    semestres[semestre].push(asignatura);
+                });
 
-  <!-- Firebase (versión compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+                const container = document.createElement('div');
+                Object.keys(semestres).sort((a, b) => a - b).forEach(semestre => {
+                    const h2 = document.createElement('h2');
+                    h2.textContent = `Semestre ${semestre}`;
+                    container.appendChild(h2);
 
-  <!-- Script principal -->
-  <script src="main.js"></script>
+                    const table = document.createElement('table');
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = '<tr><th>Código</th><th>Nombre</th><th>Créditos</th><th>Requisitos</th></tr>';
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    semestres[semestre].forEach(asig => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${asig.codigo}</td>
+                            <td>${asig.nombre}</td>
+                            <td>${asig.creditos}</td>
+                            <td>${(asig.requisitos || []).join(', ')}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    table.appendChild(tbody);
+                    container.appendChild(table);
+                });
+
+                document.body.appendChild(container);
+            })
+            .catch(error => {
+                document.body.innerHTML += '<p style="color:red;">Error al cargar malla.json</p>';
+                console.error(error);
+            });
+    </script>
 </body>
 </html>
