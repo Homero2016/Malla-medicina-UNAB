@@ -1,63 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Malla Curricular</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h2 { background-color: #f0f0f0; padding: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #e0e0e0; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Malla Medicina</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <h1>Malla Curricular</h1>
-    <p>Este archivo muestra la malla curricular cargada desde <code>malla.json</code>.</p>
-    <script>
-        fetch('malla.json')
-            .then(response => response.json())
-            .then(data => {
-                const semestres = {};
-                data.forEach(asignatura => {
-                    const semestre = asignatura.semestre;
-                    if (!semestres[semestre]) semestres[semestre] = [];
-                    semestres[semestre].push(asignatura);
-                });
+  <main>
+    <!-- Login -->
+    <section id="login-container" aria-label="Inicio de sesión">
+      <h1>Malla Medicina</h1>
+      <button id="loginBtn" aria-label="Iniciar sesión con Google">
+        Iniciar sesión con Google
+      </button>
+      <footer id="login-footer">
+        Cata Cathalifaud — CEMUNAB 2025
+      </footer>
+    </section>
 
-                const container = document.createElement('div');
-                Object.keys(semestres).sort((a, b) => a - b).forEach(semestre => {
-                    const h2 = document.createElement('h2');
-                    h2.textContent = `Semestre ${semestre}`;
-                    container.appendChild(h2);
+    <!-- App -->
+    <section id="app" style="display: none;" aria-live="polite">
+      <h2>Hola 👋</h2>
+      <div id="resumen" aria-atomic="true"></div>
+      <div id="malla" role="region" aria-label="Malla de asignaturas"></div>
+    </section>
+  </main>
 
-                    const table = document.createElement('table');
-                    const thead = document.createElement('thead');
-                    thead.innerHTML = '<tr><th>Código</th><th>Nombre</th><th>Créditos</th><th>Requisitos</th></tr>';
-                    table.appendChild(thead);
+  <!-- Leyenda flotante -->
+  <aside id="leyenda" aria-label="Leyenda de estado de asignaturas">
+    <h4>🔍 Leyenda</h4>
+    <div class="leyenda-item">
+      <div class="leyenda-cuadro c-aprobado" aria-hidden="true"></div> Aprobado
+    </div>
+    <div class="leyenda-item">
+      <div class="leyenda-cuadro c-desbloqueado" aria-hidden="true"></div> Desbloqueado
+    </div>
+    <div class="leyenda-item">
+      <div class="leyenda-cuadro c-bloqueado" aria-hidden="true"></div> Bloqueado
+    </div>
+    <div class="leyenda-item">
+      <div class="leyenda-cuadro c-anual" aria-hidden="true"></div> Pendiente Anual
+    </div>
+  </aside>
 
-                    const tbody = document.createElement('tbody');
-                    semestres[semestre].forEach(asig => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${asig.codigo}</td>
-                            <td>${asig.nombre}</td>
-                            <td>${asig.creditos}</td>
-                            <td>${(asig.requisitos || []).join(', ')}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-                    table.appendChild(tbody);
-                    container.appendChild(table);
-                });
-
-                document.body.appendChild(container);
-            })
-            .catch(error => {
-                document.body.innerHTML += '<p style="color:red;">Error al cargar malla.json</p>';
-                console.error(error);
-            });
-    </script>
+  <!-- Script principal -->
+  <script src="main.js" defer></script>
 </body>
 </html>
