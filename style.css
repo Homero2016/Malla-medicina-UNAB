@@ -97,6 +97,17 @@ main {
   text-align: center;
 }
 
+/* Nuevo estilo para el saludo en app */
+#app h2 {
+  font-size: 1.8rem;
+  color: #2575fc;
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-shadow: 1px 1px 5px rgba(0, 117, 252, 0.3);
+}
+
 #malla {
   max-height: 65vh;
   overflow-y: auto;
@@ -204,6 +215,7 @@ main {
 }
 
 /* Leyenda flotante */
+/* Ahora ocultamos por defecto y mostramos solo cuando JS quite el hidden */
 #leyenda {
   position: fixed;
   bottom: 100px;
@@ -218,6 +230,12 @@ main {
   text-align: left;
   color: #333;
   z-index: 1000;
+  display: none; /* oculto por defecto */
+}
+
+#leyenda[aria-hidden="false"],
+#leyenda:not([hidden]) {
+  display: block; /* mostrar cuando JS quite hidden */
 }
 
 #leyenda h4 {
