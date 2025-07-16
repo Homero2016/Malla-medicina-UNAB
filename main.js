@@ -18,10 +18,39 @@ const appContainer = document.getElementById("app");
 const loginContainer = document.getElementById("login-container");
 const resumen = document.getElementById("resumen");
 
-// Crear burbuja de créditos
+// Crear burbuja de créditos aprobados
 const burbujaCreditos = document.createElement("div");
 burbujaCreditos.id = "contadorCreditos";
+burbujaCreditos.style.position = "fixed";
+burbujaCreditos.style.bottom = "20px";
+burbujaCreditos.style.right = "20px";
+burbujaCreditos.style.background = "linear-gradient(135deg, #2575fc, #6a11cb)";
+burbujaCreditos.style.color = "white";
+burbujaCreditos.style.padding = "10px 18px";
+burbujaCreditos.style.borderRadius = "30px";
+burbujaCreditos.style.boxShadow = "0 6px 18px rgba(101, 60, 190, 0.7)";
+burbujaCreditos.style.fontWeight = "700";
+burbujaCreditos.style.fontSize = "15px";
+burbujaCreditos.style.zIndex = "9999";
+burbujaCreditos.style.userSelect = "none";
 document.body.appendChild(burbujaCreditos);
+
+// Crear burbuja flotante para PPA (Promedio Ponderado Acumulado)
+const burbujaPPA = document.createElement("div");
+burbujaPPA.id = "contadorPPA";
+burbujaPPA.style.position = "fixed";
+burbujaPPA.style.bottom = "120px";
+burbujaPPA.style.right = "20px";
+burbujaPPA.style.background = "linear-gradient(135deg, #12c2e9, #c471ed, #f64f59)";
+burbujaPPA.style.color = "white";
+burbujaPPA.style.padding = "10px 18px";
+burbujaPPA.style.borderRadius = "30px";
+burbujaPPA.style.boxShadow = "0 6px 18px rgba(246, 79, 89, 0.7)";
+burbujaPPA.style.fontWeight = "700";
+burbujaPPA.style.fontSize = "15px";
+burbujaPPA.style.zIndex = "9999";
+burbujaPPA.style.userSelect = "none";
+document.body.appendChild(burbujaPPA);
 
 // Crear tooltip emergente para requisitos y promedios
 const tooltip = document.createElement("div");
@@ -161,6 +190,27 @@ function estaAprobado(ramo, progreso) {
   return progreso[ramo.codigo] === true;
 }
 
+// Calcular y mostrar PPA (Promedio Ponderado Acumulado)
+function calcularYMostrarPPA() {
+  let sumaNotasPorCreditos = 0;
+  let sumaCreditos = 0;
+  for (const ramo of datosMalla) {
+    if (progreso[ramo.codigo] && promedios[ramo.codigo]) {
+      const promedio = parseFloat(promedios[ramo.codigo]);
+      if (!isNaN(promedio)) {
+        sumaNotasPorCreditos += promedio * ramo.creditos;
+        sumaCreditos += ramo.creditos;
+      }
+    }
+  }
+  if (sumaCreditos > 0) {
+    const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
+    burbujaPPA.textContent = `PPA: ${ppa}`;
+  } else {
+    burbujaPPA.textContent = `PPA: --`;
+  }
+}
+
 // Mostrar tooltip con promedio si existe
 function mostrarTooltip(e, texto) {
   const codigo = e.target.textContent.split(" - ")[0];
@@ -272,6 +322,7 @@ function renderMalla() {
   const porcentaje = datosMalla.length ? Math.round((aprobadosCount / datosMalla.length) * 100) : 0;
   resumen.textContent = `Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%)`;
   actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
+  calcularYMostrarPPA();
 }
 
 // --- Calculadora de promedios ---
