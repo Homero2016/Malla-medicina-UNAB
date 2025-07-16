@@ -50,20 +50,31 @@ iconoCalc.style.cssText = `
   position: fixed;
   bottom: 70px;
   right: 20px;
-  background-color: #2575fc;
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
   color: white;
-  padding: 12px 20px;
+  padding: 12px 24px;
   border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  font-weight: bold;
+  box-shadow: 0 6px 18px rgba(101, 60, 190, 0.7);
+  font-weight: 700;
   font-size: 16px;
   z-index: 9999;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
-iconoCalc.onmouseenter = () => (iconoCalc.style.transform = "scale(1.1)");
-iconoCalc.onmouseleave = () => (iconoCalc.style.transform = "scale(1)");
+iconoCalc.onmouseenter = () => {
+  iconoCalc.style.transform = "scale(1.1)";
+  iconoCalc.style.boxShadow = "0 8px 24px rgba(101, 60, 190, 0.9)";
+};
+iconoCalc.onmouseleave = () => {
+  iconoCalc.style.transform = "scale(1)";
+  iconoCalc.style.boxShadow = "0 6px 18px rgba(101, 60, 190, 0.7)";
+};
+iconoCalc.onclick = () => abrirCalculadora();
 document.body.appendChild(iconoCalc);
 
 let usuario = null;
@@ -145,9 +156,11 @@ function actualizarBurbujaCreditos(aprobados, ramos) {
 
 function estaAprobado(ramo, progreso, semestresAprobados) {
   if (ramo.tipo === "anual") {
-    return progreso[ramo.codigo] && semestresAprobados.includes("7") && semestresAprobados.includes("8");
+    // Para ramos anuales, revisar si el progreso está marcado (pendiente) o aprobado en semestres 7 y 8
+    // Aquí tú defines la lógica, te dejo básica:
+    return progreso[ramo.codigo] === true; // Solo si el usuario marcó aprobado
   } else {
-    return progreso[ramo.codigo];
+    return progreso[ramo.codigo] === true;
   }
 }
 
@@ -182,13 +195,6 @@ function renderMalla() {
   ];
 
   let aprobados = 0;
-  const semestresAprobados = Object.entries(progreso)
-    .map(([codigo]) => {
-      const ramo = datosMalla.find(r => r.codigo === codigo);
-      return ramo ? (Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre]) : [];
-    })
-    .flat()
-    .map(s => s.toString());
 
   agrupadores.forEach(({ titulo, incluye }) => {
     const contenedor = document.createElement("div");
@@ -217,15 +223,15 @@ function renderMalla() {
 
         const requisitosArray = Array.isArray(ramo.requisitos) ? ramo.requisitos : [];
         const requisitos = requisitosArray.length ? requisitosArray.join(", ") : "Ninguno";
-        const tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
+        let tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
 
         const desbloqueado = !requisitosArray.length ||
           requisitosArray.every(codigoReq => {
             const ramoReq = datosMalla.find(r => r.codigo === codigoReq);
-            return ramoReq && estaAprobado(ramoReq, progreso, semestresAprobados);
+            return ramoReq && estaAprobado(ramoReq, progreso, []);
           });
 
-        const aprobado = estaAprobado(ramo, progreso, semestresAprobados);
+        const aprobado = estaAprobado(ramo, progreso, []);
 
         if (desbloqueado) {
           div.classList.remove("bloqueado");
@@ -272,10 +278,6 @@ function renderMalla() {
 
 // --- Calculadora de promedios ---
 
-iconoCalc.onclick = () => {
-  abrirCalculadora();
-};
-
 function abrirCalculadora() {
   if (document.getElementById("calculadoraPromedios")) return; // No abrir doble vez
 
@@ -289,25 +291,28 @@ function abrirCalculadora() {
     transform: translate(-50%, -50%);
     background: white;
     color: #333;
-    padding: 25px 30px;
-    border-radius: 15px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    z-index: 100000;
+    padding: 30px 35px;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(101, 60, 190, 0.35);
     max-width: 400px;
     width: 90vw;
+    z-index: 100000;
+    user-select: none;
+    animation: modalAppear 0.3s ease forwards;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   `;
 
   modal.innerHTML = `
     <h3>Calculadora de Promedios</h3>
     <label for="selectRamo">Seleccione ramo:</label>
-    <select id="selectRamo" style="width: 100%; margin-bottom: 15px; padding: 8px; font-size: 1rem;">
+    <select id="selectRamo" style="width: 100%; margin-bottom: 20px; padding: 10px 12px; font-size: 1rem; font-weight: 600; border: 2px solid #2575fc; border-radius: 10px; color: #2575fc; outline: none; transition: border-color 0.3s ease;">
       ${datosMalla.map(r => `<option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>`).join('')}
     </select>
-    <div id="notasContainer" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;"></div>
-    <button id="agregarNotaBtn" style="margin-bottom: 15px; padding: 8px 12px; background-color: #2575fc; color: white; border: none; border-radius: 8px; cursor: pointer;">Agregar Nota</button>
-    <div>
-      <button id="guardarPromedioBtn" style="padding: 10px 20px; background-color: #2ecc71; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">Guardar Promedio</button>
-      <button id="cerrarCalcBtn" style="margin-left: 10px; padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">Cerrar</button>
+    <div id="notasContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 20px; padding-right: 6px;"></div>
+    <button id="agregarNotaBtn" style="background-color: #2575fc; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(37, 117, 252, 0.4);">Agregar Nota</button>
+    <div style="display: flex; gap: 10px;">
+      <button id="guardarPromedioBtn" style="background-color: #2ecc71; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; flex: 1; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);">Guardar Promedio</button>
+      <button id="cerrarCalcBtn" style="background-color: #e74c3c; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; flex: 1; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);">Cerrar</button>
     </div>
   `;
 
@@ -327,12 +332,12 @@ function abrirCalculadora() {
       agregarFilaNota();
       return;
     }
-    // Si hay promedio, mostramos solo el promedio guardado y peso 100%
+    // Si hay promedio guardado, mostrarlo en un campo disabled
     const div = document.createElement("div");
     div.style.marginBottom = "8px";
     div.innerHTML = `
-      <input type="number" step="0.01" min="0" max="7" value="${promedios[codigo]}" disabled style="width: 60%; padding: 6px; font-size: 1rem; margin-right: 8px;" />
-      <span>Promedio guardado</span>
+      <input type="number" step="0.01" min="1" max="7" value="${promedios[codigo]}" disabled style="width: 100%; padding: 8px; font-size: 1rem; font-weight: 600; color: #333; border: 2px solid #bbb; border-radius: 8px;" />
+      <span style="font-weight: 600; margin-left: 8px;">Promedio guardado</span>
     `;
     notasContainer.appendChild(div);
   }
@@ -341,9 +346,11 @@ function abrirCalculadora() {
   function agregarFilaNota() {
     const fila = document.createElement("div");
     fila.style.marginBottom = "8px";
+    fila.style.display = "flex";
+    fila.style.gap = "10px";
     fila.innerHTML = `
-      <input type="number" step="0.01" min="1" max="7" placeholder="Nota (1-7)" style="width: 55%; padding: 6px; font-size: 1rem; margin-right: 8px;" />
-      <input type="number" step="0.01" min="0" max="100" placeholder="Peso (%)" style="width: 35%; padding: 6px; font-size: 1rem;" />
+      <input type="number" step="0.01" min="1" max="7" placeholder="Nota (1-7)" style="flex: 1; padding: 8px; font-size: 1rem; font-weight: 600; color: #333; border: 2px solid #bbb; border-radius: 8px;" />
+      <input type="number" step="0.01" min="0" max="100" placeholder="Peso (%)" style="width: 100px; padding: 8px; font-size: 1rem; font-weight: 600; color: #333; border: 2px solid #bbb; border-radius: 8px;" />
     `;
     notasContainer.appendChild(fila);
   }
