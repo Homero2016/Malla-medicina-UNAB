@@ -80,7 +80,7 @@ document.body.appendChild(iconoCalc);
 let usuario = null;
 let datosMalla = [];
 let progreso = {};
-let promedios = {}; // Aquí guardamos promedios por ramo
+let promedios = {};
 
 // Login Google
 loginBtn.onclick = () => {
@@ -143,27 +143,25 @@ async function cargarProgreso() {
   }
 }
 
+// Contar créditos aprobados
 function contarCreditosAprobados(ramos, aprobados) {
   return ramos
     .filter(r => aprobados.includes(r.codigo))
     .reduce((suma, r) => suma + r.creditos, 0);
 }
 
+// Actualizar burbuja créditos
 function actualizarBurbujaCreditos(aprobados, ramos) {
   const total = contarCreditosAprobados(ramos, aprobados);
   burbujaCreditos.textContent = `${total} créditos aprobados`;
 }
 
-function estaAprobado(ramo, progreso, semestresAprobados) {
-  if (ramo.tipo === "anual") {
-    // Para ramos anuales, revisar si el progreso está marcado (pendiente) o aprobado en semestres 7 y 8
-    // Aquí tú defines la lógica, te dejo básica:
-    return progreso[ramo.codigo] === true; // Solo si el usuario marcó aprobado
-  } else {
-    return progreso[ramo.codigo] === true;
-  }
+// Ver si ramo está aprobado
+function estaAprobado(ramo, progreso) {
+  return progreso[ramo.codigo] === true;
 }
 
+// Mostrar tooltip con promedio si existe
 function mostrarTooltip(e, texto) {
   const codigo = e.target.textContent.split(" - ")[0];
   if (promedios[codigo]) {
@@ -178,6 +176,7 @@ function ocultarTooltip() {
   tooltip.style.display = "none";
 }
 
+// Renderizar la malla curricular
 function renderMalla() {
   mallaDiv.innerHTML = "";
   const agrupadores = [
@@ -194,7 +193,7 @@ function renderMalla() {
     { titulo: "7° Año", incluye: [13, 14] },
   ];
 
-  let aprobados = 0;
+  let aprobadosCount = 0;
 
   agrupadores.forEach(({ titulo, incluye }) => {
     const contenedor = document.createElement("div");
@@ -228,35 +227,34 @@ function renderMalla() {
         const desbloqueado = !requisitosArray.length ||
           requisitosArray.every(codigoReq => {
             const ramoReq = datosMalla.find(r => r.codigo === codigoReq);
-            return ramoReq && estaAprobado(ramoReq, progreso, []);
+            return ramoReq && estaAprobado(ramoReq, progreso);
           });
 
-        const aprobado = estaAprobado(ramo, progreso, []);
+        const aprobado = estaAprobado(ramo, progreso);
 
         if (desbloqueado) {
           div.classList.remove("bloqueado");
           div.classList.add("desbloqueado");
           div.onclick = async () => {
-            if (progreso[ramo.codigo]) {
-              delete progreso[ramo.codigo];
-            } else {
-              progreso[ramo.codigo] = true;
+            try {
+              if (progreso[ramo.codigo]) {
+                delete progreso[ramo.codigo];
+              } else {
+                progreso[ramo.codigo] = true;
+              }
+              await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
+              renderMalla();
+            } catch (e) {
+              console.error("Error guardando progreso:", e);
+              alert("Error guardando progreso, intenta nuevamente.");
             }
-            await db.collection("progresos").doc(usuario.uid).set({
-              progreso,
-              promedios
-            });
-            renderMalla();
           };
         }
 
         if (aprobado) {
           div.classList.add("aprobado");
           div.textContent += " ✅";
-          aprobados++;
-        } else if (ramo.tipo === "anual" && progreso[ramo.codigo]) {
-          div.classList.add("pendiente-anual");
-          div.textContent += " ⏳";
+          aprobadosCount++;
         }
 
         div.addEventListener("mouseenter", e => mostrarTooltip(e, tooltipTexto));
@@ -271,8 +269,8 @@ function renderMalla() {
     mallaDiv.appendChild(contenedor);
   });
 
-  const porcentaje = datosMalla.length ? Math.round((aprobados / datosMalla.length) * 100) : 0;
-  resumen.textContent = `Avance: ${aprobados}/${datosMalla.length} ramos (${porcentaje}%)`;
+  const porcentaje = datosMalla.length ? Math.round((aprobadosCount / datosMalla.length) * 100) : 0;
+  resumen.textContent = `Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%)`;
   actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
 }
 
@@ -324,24 +322,6 @@ function abrirCalculadora() {
   const cerrarBtn = modal.querySelector("#cerrarCalcBtn");
   const agregarNotaBtn = modal.querySelector("#agregarNotaBtn");
 
-  // Cargar promedio actual si existe
-  function cargarPromedioRamo(codigo) {
-    notasContainer.innerHTML = "";
-    if (!promedios[codigo]) {
-      // Si no hay promedio, iniciamos con una nota y peso vacío para editar
-      agregarFilaNota();
-      return;
-    }
-    // Si hay promedio guardado, mostrarlo en un campo disabled
-    const div = document.createElement("div");
-    div.style.marginBottom = "8px";
-    div.innerHTML = `
-      <input type="number" step="0.01" min="1" max="7" value="${promedios[codigo]}" disabled style="width: 100%; padding: 8px; font-size: 1rem; font-weight: 600; color: #333; border: 2px solid #bbb; border-radius: 8px;" />
-      <span style="font-weight: 600; margin-left: 8px;">Promedio guardado</span>
-    `;
-    notasContainer.appendChild(div);
-  }
-
   // Añade una fila para ingresar nota y peso
   function agregarFilaNota() {
     const fila = document.createElement("div");
@@ -355,7 +335,23 @@ function abrirCalculadora() {
     notasContainer.appendChild(fila);
   }
 
-  // Cuando cambia el ramo seleccionado
+  // Cargar promedio actual si existe
+  function cargarPromedioRamo(codigo) {
+    notasContainer.innerHTML = "";
+    if (!promedios[codigo]) {
+      agregarFilaNota();
+      return;
+    }
+    // Si hay promedio guardado, mostrarlo en un campo disabled
+    const div = document.createElement("div");
+    div.style.marginBottom = "8px";
+    div.innerHTML = `
+      <input type="number" step="0.01" min="1" max="7" value="${promedios[codigo]}" disabled style="width: 100%; padding: 8px; font-size: 1rem; font-weight: 600; color: #333; border: 2px solid #bbb; border-radius: 8px;" />
+      <span style="font-weight: 600; margin-left: 8px;">Promedio guardado</span>
+    `;
+    notasContainer.appendChild(div);
+  }
+
   selectRamo.onchange = () => {
     cargarPromedioRamo(selectRamo.value);
   };
@@ -364,7 +360,6 @@ function abrirCalculadora() {
     agregarFilaNota();
   };
 
-  // Guardar promedio
   guardarBtn.onclick = async () => {
     const inputs = notasContainer.querySelectorAll("input");
     let suma = 0, totalPeso = 0;
@@ -388,7 +383,7 @@ function abrirCalculadora() {
       await db.collection("progresos").doc(usuario.uid).set({
         progreso,
         promedios
-      });
+      }, { merge: true });
       alert(`Promedio guardado: ${promedioFinal}`);
       cerrarCalculadora();
       renderMalla();
