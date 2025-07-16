@@ -17,6 +17,55 @@ const mallaDiv = document.getElementById("malla");
 const appContainer = document.getElementById("app");
 const loginContainer = document.getElementById("login-container");
 const resumen = document.getElementById("resumen");
+const leyenda = document.getElementById("leyenda");
+
+// Leyenda flotante con botón colapsable en móviles
+function configurarLeyendaResponsive() {
+  const leyendaBtn = document.createElement("button");
+  leyendaBtn.textContent = "ℹ️ Ver leyenda";
+  leyendaBtn.id = "toggleLeyenda";
+  leyendaBtn.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 10000;
+    background: #fff;
+    color: #333;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: 2px solid #3498db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+  `;
+  document.body.appendChild(leyendaBtn);
+
+  leyenda.style.position = "fixed";
+  leyenda.style.top = "70px";
+  leyenda.style.left = "20px";
+  leyenda.style.backgroundColor = "#fff";
+  leyenda.style.borderRadius = "12px";
+  leyenda.style.padding = "16px";
+  leyenda.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+  leyenda.style.zIndex = "9999";
+  leyenda.style.width = "240px";
+  leyenda.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+  leyenda.style.display = "none";
+
+  leyenda.innerHTML = `
+    <h4 style="margin-bottom: 10px; font-size: 1rem;">🎨 Significado de colores</h4>
+    <div class="leyenda-item"><div class="leyenda-cuadro c-aprobado" style="background-color: #2ecc71;"></div> ✅ Aprobado (ya cursado)</div>
+    <div class="leyenda-item"><div class="leyenda-cuadro c-desbloqueado" style="background-color: #3498db;"></div> 📘 Desbloqueado (puedes tomarlo)</div>
+    <div class="leyenda-item"><div class="leyenda-cuadro c-bloqueado" style="background-color: #bdc3c7;"></div> 🔒 Bloqueado (faltan requisitos)</div>
+    <div class="leyenda-item"><div class="leyenda-cuadro c-anual" style="border: 2px dashed orange;"></div> 🔁 Anual / pendiente</div>
+  `;
+
+  leyendaBtn.onclick = () => {
+    leyenda.style.display = leyenda.style.display === "none" ? "block" : "none";
+  };
+}
+
+configurarLeyendaResponsive();
 
 // Crear burbuja de créditos aprobados
 const burbujaCreditos = document.createElement("div");
@@ -31,62 +80,44 @@ burbujaCreditos.style.borderRadius = "30px";
 burbujaCreditos.style.boxShadow = "0 6px 18px rgba(101, 60, 190, 0.7)";
 burbujaCreditos.style.fontWeight = "700";
 burbujaCreditos.style.fontSize = "15px";
-burbujaCreditos.style.zIndex = "9999";
+burbujaCreditos.style.zIndex = "9998";
 burbujaCreditos.style.userSelect = "none";
 document.body.appendChild(burbujaCreditos);
 
-// Crear burbuja flotante para PPA (Promedio Ponderado Acumulado)
+// Crear burbuja flotante para PPA
 const burbujaPPA = document.createElement("div");
 burbujaPPA.id = "contadorPPA";
 burbujaPPA.style.position = "fixed";
-burbujaPPA.style.bottom = "120px";
+burbujaPPA.style.bottom = "80px";
 burbujaPPA.style.right = "20px";
-burbujaPPA.style.background = "linear-gradient(135deg, #12c2e9, #c471ed, #f64f59)";
+burbujaPPA.style.background = "linear-gradient(135deg, #f857a6, #ff5858)";
 burbujaPPA.style.color = "white";
 burbujaPPA.style.padding = "10px 18px";
 burbujaPPA.style.borderRadius = "30px";
-burbujaPPA.style.boxShadow = "0 6px 18px rgba(246, 79, 89, 0.7)";
+burbujaPPA.style.boxShadow = "0 6px 18px rgba(248, 87, 166, 0.7)";
 burbujaPPA.style.fontWeight = "700";
 burbujaPPA.style.fontSize = "15px";
-burbujaPPA.style.zIndex = "9999";
+burbujaPPA.style.zIndex = "9998";
 burbujaPPA.style.userSelect = "none";
 document.body.appendChild(burbujaPPA);
 
-// Crear tooltip emergente para requisitos y promedios
-const tooltip = document.createElement("div");
-tooltip.id = "tooltip";
-tooltip.style.cssText = `
-  position: absolute;
-  background: #fff;
-  color: #333;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  font-size: 14px;
-  z-index: 99999;
-  display: none;
-  max-width: 220px;
-  pointer-events: none;
-`;
-document.body.appendChild(tooltip);
-
-// Crear icono flotante para la calculadora de promedios
+// Crear icono flotante para la calculadora
 const iconoCalc = document.createElement("div");
 iconoCalc.id = "iconoCalculadora";
 iconoCalc.title = "Calculadora de promedios por ramo";
 iconoCalc.textContent = "📊 Promedios";
 iconoCalc.style.cssText = `
   position: fixed;
-  bottom: 70px;
+  bottom: 140px;
   right: 20px;
-  background: linear-gradient(135deg, #2575fc, #6a11cb);
+  background: linear-gradient(135deg, #8e44ad, #2980b9);
   color: white;
   padding: 12px 24px;
   border-radius: 30px;
-  box-shadow: 0 6px 18px rgba(101, 60, 190, 0.7);
+  box-shadow: 0 6px 18px rgba(52, 152, 219, 0.7);
   font-weight: 700;
   font-size: 16px;
-  z-index: 9999;
+  z-index: 9998;
   cursor: pointer;
   user-select: none;
   display: flex;
@@ -97,11 +128,11 @@ iconoCalc.style.cssText = `
 `;
 iconoCalc.onmouseenter = () => {
   iconoCalc.style.transform = "scale(1.1)";
-  iconoCalc.style.boxShadow = "0 8px 24px rgba(101, 60, 190, 0.9)";
+  iconoCalc.style.boxShadow = "0 8px 24px rgba(52, 152, 219, 0.9)";
 };
 iconoCalc.onmouseleave = () => {
   iconoCalc.style.transform = "scale(1)";
-  iconoCalc.style.boxShadow = "0 6px 18px rgba(101, 60, 190, 0.7)";
+  iconoCalc.style.boxShadow = "0 6px 18px rgba(52, 152, 219, 0.7)";
 };
 iconoCalc.onclick = () => abrirCalculadora();
 document.body.appendChild(iconoCalc);
@@ -171,7 +202,6 @@ async function cargarProgreso() {
     promedios = {};
   }
 }
-
 // Contar créditos aprobados
 function contarCreditosAprobados(ramos, aprobados) {
   return ramos
@@ -274,12 +304,14 @@ function renderMalla() {
         const requisitos = requisitosArray.length ? requisitosArray.join(", ") : "Ninguno";
         let tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
 
+        // Verificar si está desbloqueado (cumple requisitos)
         const desbloqueado = !requisitosArray.length ||
           requisitosArray.every(codigoReq => {
             const ramoReq = datosMalla.find(r => r.codigo === codigoReq);
             return ramoReq && estaAprobado(ramoReq, progreso);
           });
 
+        // Si está aprobado
         const aprobado = estaAprobado(ramo, progreso);
 
         if (desbloqueado) {
@@ -324,11 +356,10 @@ function renderMalla() {
   actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
   calcularYMostrarPPA();
 }
-
 // --- Calculadora de promedios ---
 
 function abrirCalculadora() {
-  if (document.getElementById("calculadoraPromedios")) return; // No abrir doble vez
+  if (document.getElementById("calculadoraPromedios")) return; // Evitar abrir doble vez
 
   // Crear modal
   const modal = document.createElement("div");
@@ -393,7 +424,7 @@ function abrirCalculadora() {
       agregarFilaNota();
       return;
     }
-    // Si hay promedio guardado, mostrarlo en un campo disabled
+    // Mostrar promedio guardado (solo lectura)
     const div = document.createElement("div");
     div.style.marginBottom = "8px";
     div.innerHTML = `
