@@ -3,7 +3,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDbz-PJ9OSELTu1tTg2hSPAST8VouWqeEc",
   authDomain: "malla-medicina-unab.firebaseapp.com",
   projectId: "malla-medicina-unab",
-  storageBucket: "malla-medicina-unab.firebasestorage.app",
+  storageBucket: "malla-medicina-unab.appspot.com",
   messagingSenderId: "624124095109",
   appId: "1:624124095109:web:83649db993b8f570afd7ec",
   measurementId: "G-QR06PHWGZX"
@@ -64,6 +64,7 @@ function configurarLeyendaResponsive() {
     leyenda.style.display = leyenda.style.display === "none" ? "block" : "none";
   };
 }
+
 configurarLeyendaResponsive();
 
 // Crear burbuja de créditos aprobados
@@ -157,7 +158,6 @@ auth.onAuthStateChanged(async (user) => {
       await cargarMalla();
       await cargarProgreso();
       renderMalla();
-      checkSemestresCompletados(); // Check felicitación al cargar
     } catch (e) {
       console.error("Error cargando o renderizando:", e);
     }
@@ -226,6 +226,362 @@ function calcularYMostrarPPA() {
   let sumaNotasPorCreditos = 0;
   let sumaCreditos = 0;
   for (const ramo of datosMalla) {
+    if (progreso[ramo.codigo] && promedios[ramo.codigo]) {
+      const promedio = parseFloat(promedios[ramo.codigo]);
+      if (!isNaN(promedio)) {
+        sumaNotasPorCreditos += promedio * ramo.creditos;
+        sumaCreditos += ramo.creditos;
+      }
+    }
+  }
+  if (sumaCreditos > 0) {
+    const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
+    burbujaPPA.textContent = `PPA: ${ppa}`;
+  } else {
+    burbujaPPA.textContent = `PPA: --`;
+  }
+}
+
+// Mostrar tooltip con promedio si existe
+const tooltip = document.createElement("div");
+tooltip.id = "tooltipPromedios";
+tooltip.style.position = "absolute";
+tooltip.style.background = "rgba(0,0,0,0.75)";
+tooltip.style.color = "white";
+tooltip.style.padding = "6px 10px";
+tooltip.style.borderRadius = "6px";
+tooltip.style.fontSize = "13px";
+tooltip.style.pointerEvents = "none";
+tooltip.style.display = "none";
+tooltip.style.zIndex = "9999";
+document.body.appendChild(tooltip);
+
+function mostrarTooltip(e, texto) {
+  const codigo = e.target.textContent.split(" - ")[0];
+  if (promedios[codigo]) {
+    texto += `\nPromedio: ${promedios[codigo]}`;
+  }
+  tooltip.innerText = texto;
+  tooltip.style.top = `${e.pageY + 10}px`;
+  tooltip.style.left = `${e.pageX + 10}px`;
+  tooltip.style.display = "block";
+}
+function ocultarTooltip() {
+  tooltip.style.display = "none";
+}
+
+// Renderizar la malla curricular
+function renderMalla() {
+  mallaDiv.innerHTML = "";
+  const agrupadores = [
+    { titulo: "1° Semestre", incluye: [1] },
+    { titulo: "2° Semestre", incluye: [2] },
+    { titulo: "3° Semestre", incluye: [3] },
+    { titulo: "4° Semestre", incluye: [4] },
+    { titulo: "5° Semestre", incluye: [5] },
+    { titulo: "6° Semestre", incluye: [6] },
+    { titulo: "7° Semestre", incluye: [7] },
+    { titulo: "8° Semestre", incluye: [8] },
+    { titulo: "5° Año", incluye: [9, 10] },
+    { titulo: "6° Año", incluye: [11, 12] },
+    { titulo: "7° Año", incluye: [13, 14] },
+  ];
+
+  let aprobadosCount = 0;
+
+  agrupadores.forEach(({ titulo, incluye }) => {
+    const contenedor = document.createElement("div");
+    contenedor.className = "semestre";
+    const encabezado = document.createElement("h3");
+    encabezado.textContent = `📘 ${titulo}`;
+    contenedor.appendChild(encabezado);
+
+    const fila = document.createElement("div");
+    fila.className = "malla-grid";
+    const yaRenderizados = new Set();
+
+    datosMalla
+      .filter(r => {
+        const s = Array.isArray(r.semestre) ? r.semestre : [r.semestre];
+        return s.some(sem => incluye.includes(sem));
+      })
+      .forEach(ramo => {
+        if (yaRenderizados.has(ramo.codigo)) return;
+        yaRenderizados.add(ramo.codigo);
+
+        const div = document.createElement("div");
+        div.className = "ramo bloqueado";
+        div.style.background = ramo.color || "#999";
+        div.textContent = `${ramo.codigo} - ${ramo.nombre}`;
+
+        const requisitosArray = Array.isArray(ramo.requisitos) ? ramo.requisitos : [];
+        const requisitos = requisitosArray.length ? requisitosArray.join(", ") : "Ninguno";
+        let tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
+
+        // Verificar si está desbloqueado (cumple requisitos)
+        const desbloqueado = !requisitosArray.length ||
+          requisitosArray.every(codigoReq => {
+            const ramoReq = datosMalla.find(r => r.codigo === codigoReq);
+            return ramoReq && estaAprobado(ramoReq, progreso);
+          });
+
+        // Si está aprobado
+        const aprobado = estaAprobado(ramo, progreso);
+
+        if (desbloqueado) {
+          div.classList.remove("bloqueado");
+          div.classList.add("desbloqueado");
+          div.onclick = async () => {
+            try {
+              if (progreso[ramo.codigo]) {
+                delete progreso[ramo.codigo];
+              } else {
+                progreso[ramo.codigo] = true;
+              }
+              await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
+              renderMalla();
+            } catch (e) {
+              console.error("Error guardando progreso:", e);
+              alert("Error guardando progreso, intenta nuevamente.");
+            }
+          };
+        }
+
+        if (aprobado) {
+          div.classList.add("aprobado");
+          div.textContent += " ✅";
+          aprobadosCount++;
+        }
+
+        div.addEventListener("mouseenter", e => mostrarTooltip(e, tooltipTexto));
+        div.addEventListener("mouseleave", ocultarTooltip);
+        div.addEventListener("touchstart", e => mostrarTooltip(e, tooltipTexto));
+        div.addEventListener("touchend", ocultarTooltip);
+
+        fila.appendChild(div);
+      });
+
+    contenedor.appendChild(fila);
+    mallaDiv.appendChild(contenedor);
+  });
+
+  const porcentaje = datosMalla.length ? Math.round((aprobadosCount / datosMalla.length) * 100) : 0;
+  resumen.textContent = `Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%)`;
+  actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
+  calcularYMostrarPPA();
+}
+
+// --- Calculadora de promedios ---
+
+function abrirCalculadora() {
+  if (document.getElementById("calculadoraPromedios")) return; // Evitar abrir doble vez
+
+  // Crear modal
+  const modal = document.createElement("div");
+  modal.id = "calculadoraPromedios";
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    color: #333;
+    padding: 30px 35px;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(101, 60, 190, 0.35);
+    max-width: 400px;
+    width: 90vw;
+    z-index: 100000;
+    user-select: none;
+    animation: modalAppear 0.3s ease forwards;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  `;
+
+  modal.innerHTML = `
+    <h3>Calculadora de Promedios</h3>
+    <label for="selectRamo">Seleccione ramo:</label>
+    <select id="selectRamo" style="width: 100%; margin-bottom: 20px; padding: 10px 12px; font-size: 1rem; font-weight: 600; border: 2px solid #2575fc; border-radius: 10px; color: #2575fc; outline: none; transition: border-color 0.3s ease;">
+      ${datosMalla.map(r => `<option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>`).join('')}
+    </select>
+    <div id="notasContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 20px; padding-right: 6px;"></div>
+    <button id="agregarNotaBtn" style="background-color: #2575fc; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37,117,252,0.7);">Agregar nota</button>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button id="calcularBtn" style="background-color: #6a11cb; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 30px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(106,17,203,0.7);">Calcular promedio</button>
+    </div>
+    <div id="resultadoPromedio" style="font-weight: 700; font-size: 1.4rem; color: #2980b9; text-align: center; margin-bottom: 20px;">Promedio: --</div>
+    <button id="cerrarCalcBtn" style="background-color: #e74c3c; color: white; font-weight: 700; font-size: 1rem; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(231,76,60,0.8);">Cerrar</button>
+  `;
+
+  document.body.appendChild(modal);
+
+  const selectRamo = modal.querySelector("#selectRamo");
+  const notasContainer = modal.querySelector("#notasContainer");
+  const agregarNotaBtn = modal.querySelector("#agregarNotaBtn");
+  const calcularBtn = modal.querySelector("#calcularBtn");
+  const resultadoPromedio = modal.querySelector("#resultadoPromedio");
+  const cerrarBtn = modal.querySelector("#cerrarCalcBtn");
+
+  function crearFilaNota(valorNota = "", valorPeso = "") {
+    const fila = document.createElement("div");
+    fila.style.display = "flex";
+    fila.style.gap = "10px";
+    fila.style.marginBottom = "10px";
+
+    const inputNota = document.createElement("input");
+    inputNota.type = "number";
+    inputNota.placeholder = "Nota (0-100)";
+    inputNota.min = 0;
+    inputNota.max = 100;
+    inputNota.step = "0.01";
+    inputNota.value = valorNota;
+    inputNota.style.flex = "2";
+    inputNota.style.padding = "8px 10px";
+    inputNota.style.border = "1.5px solid #3498db";
+    inputNota.style.borderRadius = "10px";
+    inputNota.style.fontWeight = "600";
+    inputNota.style.fontSize = "1rem";
+    inputNota.style.color = "#2575fc";
+    inputNota.style.outline = "none";
+
+    const inputPeso = document.createElement("input");
+    inputPeso.type = "number";
+    inputPeso.placeholder = "Peso %";
+    inputPeso.min = 0;
+    inputPeso.max = 100;
+    inputPeso.step = "1";
+    inputPeso.value = valorPeso;
+    inputPeso.style.flex = "1";
+    inputPeso.style.padding = "8px 10px";
+    inputPeso.style.border = "1.5px solid #3498db";
+    inputPeso.style.borderRadius = "10px";
+    inputPeso.style.fontWeight = "600";
+    inputPeso.style.fontSize = "1rem";
+    inputPeso.style.color = "#2575fc";
+    inputPeso.style.outline = "none";
+
+    const btnEliminar = document.createElement("button");
+    btnEliminar.textContent = "✖";
+    btnEliminar.title = "Eliminar nota";
+    btnEliminar.style.background = "transparent";
+    btnEliminar.style.border = "none";
+    btnEliminar.style.color = "#e74c3c";
+    btnEliminar.style.fontSize = "1.3rem";
+    btnEliminar.style.cursor = "pointer";
+    btnEliminar.style.flex = "0";
+    btnEliminar.style.alignSelf = "center";
+
+    btnEliminar.onclick = () => {
+      fila.remove();
+    };
+
+    fila.appendChild(inputNota);
+    fila.appendChild(inputPeso);
+    fila.appendChild(btnEliminar);
+
+    return fila;
+  }
+
+  function cargarNotasGuardadas(codigoRamo) {
+    notasContainer.innerHTML = "";
+    if (promedios[codigoRamo] && typeof promedios[codigoRamo] === "object" && promedios[codigoRamo].notas) {
+      const notas = promedios[codigoRamo].notas;
+      notas.forEach(n => {
+        const fila = crearFilaNota(n.nota, n.peso);
+        notasContainer.appendChild(fila);
+      });
+    } else {
+      // Una fila vacía por defecto
+      notasContainer.appendChild(crearFilaNota());
+    }
+    resultadoPromedio.textContent = `Promedio: --`;
+  }
+
+  // Cuando cambia el ramo seleccionado
+  selectRamo.onchange = () => {
+    cargarNotasGuardadas(selectRamo.value);
+  };
+
+  agregarNotaBtn.onclick = () => {
+    notasContainer.appendChild(crearFilaNota());
+  };
+
+  calcularBtn.onclick = () => {
+    const filas = Array.from(notasContainer.children);
+    let sumaPesos = 0;
+    let sumaPonderada = 0;
+    let error = false;
+
+    filas.forEach(fila => {
+      const inputs = fila.querySelectorAll("input");
+      const nota = parseFloat(inputs[0].value);
+      const peso = parseFloat(inputs[1].value);
+
+      if (isNaN(nota) || nota < 0 || nota > 100) {
+        error = true;
+        alert("Por favor ingresa notas entre 0 y 100.");
+        return;
+      }
+      if (isNaN(peso) || peso < 0 || peso > 100) {
+        error = true;
+        alert("Por favor ingresa pesos entre 0 y 100.");
+        return;
+      }
+
+      sumaPesos += peso;
+      sumaPonderada += (nota * peso);
+    });
+
+    if (error) return;
+
+    if (sumaPesos !== 100) {
+      alert("La suma de los pesos debe ser exactamente 100%.");
+      return;
+    }
+
+    const promedioCalculado = (sumaPonderada / 100).toFixed(2);
+    resultadoPromedio.textContent = `Promedio: ${promedioCalculado}`;
+
+    // Guardar promedio y notas en Firebase
+    const codigo = selectRamo.value;
+    const notasGuardar = filas.map(fila => {
+      const inputs = fila.querySelectorAll("input");
+      return {
+        nota: inputs[0].value,
+        peso: inputs[1].value,
+      };
+    });
+
+    promedios[codigo] = {
+      promedio: promedioCalculado,
+      notas: notasGuardar,
+    };
+
+    guardarPromediosFirebase();
+    calcularYMostrarPPA();
+  };
+
+  cerrarBtn.onclick = () => {
+    modal.remove();
+  };
+
+  // Cargar inicialmente las notas para el ramo seleccionado
+  cargarNotasGuardadas(selectRamo.value);
+}
+
+async function guardarPromediosFirebase() {
+  if (!usuario) return;
+  try {
+    await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
+  } catch (error) {
+    console.error("Error guardando promedios:", error);
+  }
+}
+
+// Para el PPA calcular desde el objeto promedios (promedio calculado, no solo el promedio plano)
+function calcularYMostrarPPA() {
+  let sumaNotasPorCreditos = 0;
+  let sumaCreditos = 0;
+  for (const ramo of datosMalla) {
     if (progreso[ramo.codigo] && promedios[ramo.codigo] && promedios[ramo.codigo].promedio) {
       const promedio = parseFloat(promedios[ramo.codigo].promedio);
       if (!isNaN(promedio)) {
@@ -234,452 +590,20 @@ function calcularYMostrarPPA() {
       }
     }
   }
-  if (sumaCreditos === 0) {
-    burbujaPPA.textContent = `PPA: N/A`;
-  } else {
+  if (sumaCreditos > 0) {
     const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
     burbujaPPA.textContent = `PPA: ${ppa}`;
+  } else {
+    burbujaPPA.textContent = `PPA: --`;
   }
 }
 
-// Función para saber si puedes tomar un ramo (tiene requisitos cumplidos)
-function puedeTomar(ramo) {
-  if (!ramo.requisitos || ramo.requisitos.length === 0) return true;
-  return ramo.requisitos.every(reqCodigo => progreso[reqCodigo] === true);
-}
-
-// Renderizado de la malla con ramos
-function renderMalla() {
-  mallaDiv.innerHTML = "";
-  if (datosMalla.length === 0) return;
-
-  // Agrupar por semestre
-  const semestresMap = {};
-  datosMalla.forEach(ramo => {
-    let semestres = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
-    semestres.forEach(sem => {
-      if (!semestresMap[sem]) semestresMap[sem] = [];
-      semestresMap[sem].push(ramo);
-    });
-  });
-
-  const semestresOrdenados = Object.keys(semestresMap).sort((a, b) => a - b);
-
-  semestresOrdenados.forEach(sem => {
-    const contSemestre = document.createElement("section");
-    contSemestre.className = "semestre";
-    contSemestre.setAttribute("aria-label", `Semestre ${sem}`);
-
-    const tituloSemestre = document.createElement("h2");
-    tituloSemestre.textContent = `Semestre ${sem}`;
-    contSemestre.appendChild(tituloSemestre);
-
-    const ramosSemestre = semestresMap[sem];
-    ramosSemestre.forEach(ramo => {
-      const div = document.createElement("div");
-      div.className = "ramo";
-      div.setAttribute("tabindex", "0");
-      div.setAttribute("role", "button");
-      div.setAttribute("aria-pressed", estaAprobado(ramo, progreso));
-      div.title = `${ramo.nombre}\nCréditos: ${ramo.creditos}\nRequisitos: ${
-        ramo.requisitos && ramo.requisitos.length > 0 ? ramo.requisitos.join(", ") : "Ninguno"
-      }`;
-
-      // Estado visual según progreso
-      if (estaAprobado(ramo, progreso)) {
-        div.classList.add("aprobado");
-      } else if (puedeTomar(ramo)) {
-        div.classList.add("desbloqueado");
-      } else {
-        div.classList.add("bloqueado");
-      }
-
-      div.textContent = `${ramo.codigo}`;
-
-      // Mostrar promedio al pasar el cursor
-      if (promedios[ramo.codigo] && promedios[ramo.codigo].promedio) {
-        div.setAttribute("data-promedio", promedios[ramo.codigo].promedio);
-        div.title += `\nPromedio: ${promedios[ramo.codigo].promedio}`;
-      }
-
-      // Toggle aprobado / no aprobado
-      div.onclick = async () => {
-        try {
-          if (progreso[ramo.codigo]) {
-            delete progreso[ramo.codigo];
-          } else {
-            progreso[ramo.codigo] = true;
-          }
-          await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
-          renderMalla();
-          checkSemestresCompletados();
-        } catch (e) {
-          console.error("Error guardando progreso:", e);
-          alert("Error guardando progreso, intenta nuevamente.");
-        }
-      };
-
-      contSemestre.appendChild(div);
-    });
-
-    mallaDiv.appendChild(contSemestre);
-  });
-
-  // Actualizar burbujas de créditos y PPA
-  const aprobadosCodigos = Object.keys(progreso).filter(k => progreso[k] === true);
-  actualizarBurbujaCreditos(datosMalla, aprobadosCodigos);
-  calcularYMostrarPPA();
-}
-
-// ----------------------
-// Calculadora de promedios
-// ----------------------
-
-// Crear modal calculadora
-function crearModalCalculadora() {
-  let modal = document.getElementById("modalCalculadora");
-  if (modal) return modal; // Ya creado
-
-  modal = document.createElement("div");
-  modal.id = "modalCalculadora";
-  modal.className = "modal";
-  modal.style.display = "none";
-  modal.style.position = "fixed";
-  modal.style.top = "0";
-  modal.style.left = "0";
-  modal.style.width = "100%";
-  modal.style.height = "100%";
-  modal.style.backgroundColor = "rgba(0,0,0,0.5)";
-  modal.style.zIndex = "30000";
-  modal.style.justifyContent = "center";
-  modal.style.alignItems = "center";
-
-  modal.innerHTML = `
-    <div style="background:white; border-radius:15px; padding:20px; max-width: 420px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 18px rgba(0,0,0,0.25); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      <button id="cerrarCalc" style="float: right; font-size: 28px; border:none; background:none; cursor:pointer;">&times;</button>
-      <h3>Calculadora de Promedios por Ramo</h3>
-      <label for="selectRamoCalc">Selecciona ramo:</label>
-      <select id="selectRamoCalc" style="width: 100%; margin-bottom: 15px; font-size: 1rem; padding: 6px;"></select>
-      <div id="pruebasContainer"></div>
-      <button id="agregarPruebaBtn" style="margin-top: 10px;">➕ Agregar prueba</button>
-      <div style="margin-top:15px;">
-        <strong>Promedio actual: </strong><span id="promedioActual">0.00</span>
-      </div>
-      <button id="guardarPromedioBtn" style="margin-top: 20px; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Guardar promedio</button>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById("cerrarCalc").onclick = () => {
-    modal.style.display = "none";
-  };
-
-  return modal;
-}
-
-function abrirCalculadora() {
-  const modal = crearModalCalculadora();
-  modal.style.display = "flex";
-
-  const selectRamo = document.getElementById("selectRamoCalc");
-  const pruebasContainer = document.getElementById("pruebasContainer");
-  const promedioActualSpan = document.getElementById("promedioActual");
-  const guardarBtn = document.getElementById("guardarPromedioBtn");
-  const agregarPruebaBtn = document.getElementById("agregarPruebaBtn");
-
-  // Limpiar select
-  selectRamo.innerHTML = "";
-  datosMalla.forEach(ramo => {
-    const opt = document.createElement("option");
-    opt.value = ramo.codigo;
-    opt.textContent = `${ramo.codigo} - ${ramo.nombre}`;
-    selectRamo.appendChild(opt);
-  });
-
-  // Limpiar pruebas
-  pruebasContainer.innerHTML = "";
-
-  // Cargar pruebas previas si existen
-  function cargarPruebas(ra) {
-    pruebasContainer.innerHTML = "";
-    const data = promedios[ra] || { pruebas: [] };
-    if (data.pruebas.length === 0) {
-      agregarPrueba();
-      agregarPrueba();
-    } else {
-      data.pruebas.forEach(({ nombre, porcentaje, nota }) => {
-        agregarPrueba(nombre, porcentaje, nota);
-      });
-    }
-    calcularPromedio();
+// CSS para animación modal (puedes poner en styles.css si quieres)
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes modalAppear {
+    from {opacity: 0; transform: translate(-50%, -45%) scale(0.8);}
+    to {opacity: 1; transform: translate(-50%, -50%) scale(1);}
   }
-
-  // Añadir una prueba de nota
-  function agregarPrueba(nombre = "", porcentaje = "", nota = "") {
-    const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.gap = "6px";
-    div.style.marginBottom = "8px";
-
-    const inputNombre = document.createElement("input");
-    inputNombre.type = "text";
-    inputNombre.placeholder = "Nombre prueba";
-    inputNombre.value = nombre;
-    inputNombre.style.flex = "2";
-
-    const inputPorcentaje = document.createElement("input");
-    inputPorcentaje.type = "number";
-    inputPorcentaje.placeholder = "%";
-    inputPorcentaje.min = 0;
-    inputPorcentaje.max = 100;
-    inputPorcentaje.value = porcentaje;
-    inputPorcentaje.style.flex = "1";
-
-    const inputNota = document.createElement("input");
-    inputNota.type = "number";
-    inputNota.placeholder = "Nota";
-    inputNota.min = 1;
-    inputNota.max = 7;
-    inputNota.step = 0.01;
-    inputNota.value = nota;
-    inputNota.style.flex = "1";
-
-    const btnEliminar = document.createElement("button");
-    btnEliminar.textContent = "✖";
-    btnEliminar.style.background = "transparent";
-    btnEliminar.style.border = "none";
-    btnEliminar.style.color = "red";
-    btnEliminar.style.fontWeight = "700";
-    btnEliminar.style.cursor = "pointer";
-
-    btnEliminar.onclick = () => {
-      div.remove();
-      calcularPromedio();
-    };
-
-    [inputNombre, inputPorcentaje, inputNota].forEach(input => {
-      input.oninput = calcularPromedio;
-    });
-
-    div.appendChild(inputNombre);
-    div.appendChild(inputPorcentaje);
-    div.appendChild(inputNota);
-    div.appendChild(btnEliminar);
-
-    pruebasContainer.appendChild(div);
-  }
-
-  agregarPruebaBtn.onclick = () => {
-    agregarPrueba();
-  };
-
-  // Calcular promedio según pruebas
-  function calcularPromedio() {
-    const divs = pruebasContainer.querySelectorAll("div");
-    let sumaPesos = 0;
-    let sumaNotas = 0;
-    let error = false;
-    divs.forEach(div => {
-      const inputs = div.querySelectorAll("input");
-      const porcentaje = parseFloat(inputs[1].value);
-      const nota = parseFloat(inputs[2].value);
-      if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100) error = true;
-      if (isNaN(nota) || nota < 1 || nota > 7) error = true;
-      if (!error) {
-        sumaPesos += porcentaje;
-        sumaNotas += (nota * porcentaje);
-      }
-    });
-    if (error || sumaPesos === 0) {
-      promedioActualSpan.textContent = "0.00";
-    } else {
-      promedioActualSpan.textContent = (sumaNotas / sumaPesos).toFixed(2);
-    }
-  }
-
-  // Guardar promedio en Firestore y actualizar local promedios
-  guardarBtn.onclick = async () => {
-    const ramoSeleccionado = selectRamo.value;
-    if (!ramoSeleccionado) {
-      alert("Selecciona un ramo");
-      return;
-    }
-    const divs = pruebasContainer.querySelectorAll("div");
-    const pruebasArray = [];
-    let sumaPesos = 0;
-    let error = false;
-    divs.forEach(div => {
-      const inputs = div.querySelectorAll("input");
-      const nombre = inputs[0].value.trim() || "Prueba";
-      const porcentaje = parseFloat(inputs[1].value);
-      const nota = parseFloat(inputs[2].value);
-      if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100) error = true;
-      if (isNaN(nota) || nota < 1 || nota > 7) error = true;
-      if (!error) {
-        pruebasArray.push({ nombre, porcentaje, nota });
-        sumaPesos += porcentaje;
-      }
-    });
-    if (error) {
-      alert("Porcentajes deben estar entre 0-100 y notas entre 1-7");
-      return;
-    }
-    if (sumaPesos === 0) {
-      alert("La suma de los porcentajes debe ser mayor a 0");
-      return;
-    }
-
-    const promedioCalculado = parseFloat((pruebasArray.reduce((acc, p) => acc + p.porcentaje * p.nota, 0) / sumaPesos).toFixed(2));
-
-    promedios[ramoSeleccionado] = {
-      promedio: promedioCalculado,
-      pruebas: pruebasArray
-    };
-
-    try {
-      await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
-      alert(`Promedio guardado para ${ramoSeleccionado}: ${promedioCalculado}`);
-      modal.style.display = "none";
-      renderMalla();
-      calcularYMostrarPPA();
-      checkSemestresCompletados();
-    } catch (e) {
-      console.error("Error guardando promedio:", e);
-      alert("Error guardando promedio, intenta nuevamente.");
-    }
-  };
-
-  // Al cambiar ramo seleccionado, cargar pruebas
-  selectRamo.onchange = () => {
-    cargarPruebas(selectRamo.value);
-  };
-
-  // Inicializar con el primer ramo
-  if (selectRamo.options.length > 0) {
-    cargarPruebas(selectRamo.value);
-  }
-}
-
-// ----------------------
-// Modal "¿Qué puedo tomar?"
-// ----------------------
-
-const btnTomables = document.getElementById("btn-tomables");
-const modalTomables = document.getElementById("modal-tomables");
-const cerrarModalTomables = document.getElementById("cerrar-modal");
-const listaTomables = document.getElementById("lista-tomables");
-
-function cargarRamosTomables() {
-  listaTomables.innerHTML = "";
-  const tomables = datosMalla.filter(ramo => !progreso[ramo.codigo] && puedeTomar(ramo));
-
-  if (tomables.length === 0) {
-    listaTomables.innerHTML = "<li>No hay ramos desbloqueados para el próximo semestre.</li>";
-    return;
-  }
-
-  tomables.forEach(ramo => {
-    const li = document.createElement("li");
-    li.textContent = `${ramo.codigo} - ${ramo.nombre} (${ramo.creditos} créditos)`;
-    listaTomables.appendChild(li);
-  });
-}
-
-btnTomables.addEventListener("click", () => {
-  cargarRamosTomables();
-  modalTomables.hidden = false;
-  modalTomables.setAttribute("aria-hidden", "false");
-});
-
-cerrarModalTomables.addEventListener("click", () => {
-  modalTomables.hidden = true;
-  modalTomables.setAttribute("aria-hidden", "true");
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === modalTomables) {
-    modalTomables.hidden = true;
-    modalTomables.setAttribute("aria-hidden", "true");
-  }
-});
-
-// ----------------------
-// Felicitación al completar semestre
-// ----------------------
-
-function checkSemestresCompletados() {
-  const totalSemestres = 14; // Ajusta según tu malla real
-
-  for (let sem = 1; sem <= totalSemestres; sem++) {
-    const ramosDelSemestre = datosMalla.filter(r => {
-      if (Array.isArray(r.semestre)) return r.semestre.includes(sem);
-      return r.semestre === sem;
-    });
-
-    if (ramosDelSemestre.length === 0) continue;
-
-    const todosAprobados = ramosDelSemestre.every(ramo => progreso[ramo.codigo] === true);
-    const claveSemestre = `semestre_${sem}_completado`;
-
-    if (todosAprobados && !localStorage.getItem(claveSemestre)) {
-      localStorage.setItem(claveSemestre, "true");
-      mostrarFelicitacion();
-      break; // Mostrar solo una felicitación por llamada
-    }
-  }
-}
-
-function mostrarFelicitacion() {
-  const modalFelicitacion = document.createElement("div");
-  modalFelicitacion.id = "modal-felicitacion";
-  modalFelicitacion.className = "modal";
-  modalFelicitacion.style.display = "flex";
-  modalFelicitacion.style.justifyContent = "center";
-  modalFelicitacion.style.alignItems = "center";
-  modalFelicitacion.style.position = "fixed";
-  modalFelicitacion.style.top = "0";
-  modalFelicitacion.style.left = "0";
-  modalFelicitacion.style.width = "100%";
-  modalFelicitacion.style.height = "100%";
-  modalFelicitacion.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-  modalFelicitacion.style.zIndex = "20000";
-
-  modalFelicitacion.innerHTML = `
-    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;">
-      <button id="cerrar-felicitacion" style="position: absolute; top: 10px; right: 15px; font-size: 28px; background: none; border: none; cursor: pointer;">&times;</button>
-      <h2>🎉 ¡Felicidades! 🎉</h2>
-      <p>Has completado todos los ramos de un semestre. ¡Sigue así!</p>
-    </div>
-  `;
-
-  document.body.appendChild(modalFelicitacion);
-  lanzarConfeti();
-
-  document.getElementById("cerrar-felicitacion").onclick = () => {
-    modalFelicitacion.remove();
-  };
-  modalFelicitacion.onclick = (e) => {
-    if (e.target === modalFelicitacion) {
-      modalFelicitacion.remove();
-    }
-  };
-}
-
-// Confeti - requiere incluir <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script> en index.html
-function lanzarConfeti() {
-  const duration = 4000;
-  const animationEnd = Date.now() + duration;
-  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 30000 };
-
-  (function frame() {
-    confetti({
-      particleCount: 5,
-      ...defaults,
-      origin: { x: Math.random(), y: Math.random() - 0.2 }
-    });
-    if (Date.now() < animationEnd) {
-      requestAnimationFrame(frame);
-    }
-  })();
-}
+`;
+document.head.appendChild(style);
