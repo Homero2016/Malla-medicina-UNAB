@@ -666,3 +666,148 @@ function abrirCalculadora() {
     modal.remove();
   };
 }
+// Crear div para tooltip custom
+const tooltip = document.createElement("div");
+tooltip.id = "tooltipInfo";
+tooltip.style.position = "fixed";
+tooltip.style.background = "rgba(0,0,0,0.8)";
+tooltip.style.color = "white";
+tooltip.style.padding = "8px 12px";
+tooltip.style.borderRadius = "8px";
+tooltip.style.fontSize = "13px";
+tooltip.style.pointerEvents = "none";
+tooltip.style.zIndex = "10000";
+tooltip.style.maxWidth = "260px";
+tooltip.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+tooltip.style.display = "none";
+tooltip.style.transition = "opacity 0.2s ease";
+tooltip.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+document.body.appendChild(tooltip);
+
+// Función para mostrar tooltip con contenido y posición
+function mostrarTooltip(event, contenido) {
+  tooltip.innerHTML = contenido.replace(/\n/g, "<br>");
+  tooltip.style.display = "block";
+  tooltip.style.opacity = "1";
+
+  // Posicionar tooltip cerca del mouse, ajustando para no salirse de pantalla
+  const padding = 12;
+  let x = event.clientX + padding;
+  let y = event.clientY + padding;
+
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  if (x + tooltipRect.width + padding > viewportWidth) {
+    x = event.clientX - tooltipRect.width - padding;
+  }
+  if (y + tooltipRect.height + padding > viewportHeight) {
+    y = event.clientY - tooltipRect.height - padding;
+  }
+
+  tooltip.style.left = x + "px";
+  tooltip.style.top = y + "px";
+}
+
+// Función para ocultar tooltip
+function ocultarTooltip() {
+  tooltip.style.opacity = "0";
+  setTimeout(() => {
+    tooltip.style.display = "none";
+  }, 200);
+}
+
+// Modificar renderMalla para manejar tooltip custom
+function renderMalla() {
+  mallaDiv.innerHTML = "";
+  const semestresMap = new Map();
+
+  datosMalla.forEach(ramo => {
+    const sems = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
+    sems.forEach(s => {
+      if (!semestresMap.has(s)) semestresMap.set(s, []);
+      semestresMap.get(s).push(ramo);
+    });
+  });
+
+  const semestresOrdenados = Array.from(semestresMap.keys()).sort((a, b) => a - b);
+
+  semestresOrdenados.forEach(semestre => {
+    const divSemestre = document.createElement("div");
+    divSemestre.className = "semestre";
+    divSemestre.style.marginBottom = "20px";
+
+    const tituloSemestre = document.createElement("h3");
+    tituloSemestre.textContent = `Semestre ${semestre}`;
+    tituloSemestre.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    tituloSemestre.style.color = "#2575fc";
+    divSemestre.appendChild(tituloSemestre);
+
+    const contenedorRamos = document.createElement("div");
+    contenedorRamos.style.display = "flex";
+    contenedorRamos.style.flexWrap = "wrap";
+    contenedorRamos.style.gap = "8px";
+
+    semestresMap.get(semestre).forEach(ramo => {
+      const divRamo = document.createElement("div");
+      divRamo.className = "ramo";
+      divRamo.textContent = `${ramo.codigo} - ${ramo.nombre}`;
+      divRamo.style.padding = "8px 14px";
+      divRamo.style.borderRadius = "12px";
+      divRamo.style.cursor = "pointer";
+      divRamo.style.userSelect = "none";
+      divRamo.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+      divRamo.style.fontSize = "14px";
+      divRamo.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+
+      if (progreso[ramo.codigo] === true) {
+        divRamo.style.backgroundColor = "#2ecc71";
+        divRamo.style.color = "white";
+      } else if (ramoRequisitosCumplidos(ramo)) {
+        divRamo.style.backgroundColor = "#3498db";
+        divRamo.style.color = "white";
+      } else {
+        divRamo.style.backgroundColor = "#bdc3c7";
+        divRamo.style.color = "#555";
+        divRamo.style.cursor = "not-allowed";
+      }
+
+      // Removemos el tooltip nativo
+      divRamo.removeAttribute("title");
+
+      // Mostrar tooltip custom al pasar mouse
+      divRamo.addEventListener("mousemove", (e) => {
+        mostrarTooltip(e, generarTooltip(ramo));
+      });
+      divRamo.addEventListener("mouseleave", ocultarTooltip);
+
+      // En móviles, mostrar tooltip al tocar (y ocultar después)
+      divRamo.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        mostrarTooltip(e.touches[0], generarTooltip(ramo));
+      });
+      divRamo.addEventListener("touchend", () => {
+        setTimeout(ocultarTooltip, 3000);
+      });
+
+      divRamo.onclick = async () => {
+        if (!ramoRequisitosCumplidos(ramo)) return;
+        progreso[ramo.codigo] = !progreso[ramo.codigo];
+        await guardarProgreso();
+        renderMalla();
+        await verificarSemestreCompletado();
+        actualizarBurbujaCreditos();
+        actualizarBurbujaPPA();
+      };
+
+      contenedorRamos.appendChild(divRamo);
+    });
+
+    divSemestre.appendChild(contenedorRamos);
+    mallaDiv.appendChild(divSemestre);
+  });
+
+  actualizarBurbujaCreditos();
+  actualizarBurbujaPPA();
+}
