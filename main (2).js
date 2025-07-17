@@ -24,7 +24,7 @@ function configurarLeyendaResponsive() {
   const leyendaBtn = document.createElement("button");
   leyendaBtn.textContent = "ℹ️ Ver leyenda";
   leyendaBtn.id = "toggleLeyenda";
-  leyendaBtn.style.cssText = `
+  leyendaBtn.style.cssText = 
     position: fixed;
     top: 20px;
     left: 20px;
@@ -37,7 +37,7 @@ function configurarLeyendaResponsive() {
     border: 2px solid #3498db;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     font-size: 14px;
-  `;
+  ;
   document.body.appendChild(leyendaBtn);
 
   leyenda.style.position = "fixed";
@@ -52,13 +52,13 @@ function configurarLeyendaResponsive() {
   leyenda.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
   leyenda.style.display = "none";
 
-  leyenda.innerHTML = `
+  leyenda.innerHTML = 
     <h4 style="margin-bottom: 10px; font-size: 1rem;">🎨 Significado de colores</h4>
     <div class="leyenda-item"><div class="leyenda-cuadro c-aprobado" style="background-color: #2ecc71;"></div> ✅ Aprobado (ya cursado)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-desbloqueado" style="background-color: #3498db;"></div> 📘 Desbloqueado (puedes tomarlo)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-bloqueado" style="background-color: #bdc3c7;"></div> 🔒 Bloqueado (faltan requisitos)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-anual" style="border: 2px dashed orange;"></div> 🔁 Anual / pendiente</div>
-  `;
+  ;
 
   leyendaBtn.onclick = () => {
     leyenda.style.display = leyenda.style.display === "none" ? "block" : "none";
@@ -106,7 +106,7 @@ const iconoCalc = document.createElement("div");
 iconoCalc.id = "iconoCalculadora";
 iconoCalc.title = "Calculadora de promedios por ramo";
 iconoCalc.textContent = "📊 Promedios";
-iconoCalc.style.cssText = `
+iconoCalc.style.cssText = 
   position: fixed;
   bottom: 140px;
   right: 20px;
@@ -125,7 +125,7 @@ iconoCalc.style.cssText = `
   gap: 8px;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-`;
+;
 iconoCalc.onmouseenter = () => {
   iconoCalc.style.transform = "scale(1.1)";
   iconoCalc.style.boxShadow = "0 8px 24px rgba(52, 152, 219, 0.9)";
@@ -213,7 +213,7 @@ function contarCreditosAprobados(ramos, aprobados) {
 // Actualizar burbuja créditos
 function actualizarBurbujaCreditos(aprobados, ramos) {
   const total = contarCreditosAprobados(ramos, aprobados);
-  burbujaCreditos.textContent = `${total} créditos aprobados`;
+  burbujaCreditos.textContent = ${total} créditos aprobados;
 }
 
 // Ver si ramo está aprobado
@@ -236,9 +236,9 @@ function calcularYMostrarPPA() {
   }
   if (sumaCreditos > 0) {
     const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
-    burbujaPPA.textContent = `PPA: ${ppa}`;
+    burbujaPPA.textContent = PPA: ${ppa};
   } else {
-    burbujaPPA.textContent = `PPA: --`;
+    burbujaPPA.textContent = PPA: --;
   }
 }
 
@@ -259,11 +259,11 @@ document.body.appendChild(tooltip);
 function mostrarTooltip(e, texto) {
   const codigo = e.target.textContent.split(" - ")[0];
   if (promedios[codigo]) {
-    texto += `\nPromedio: ${promedios[codigo]}`;
+    texto += \nPromedio: ${promedios[codigo]};
   }
   tooltip.innerText = texto;
-  tooltip.style.top = `${e.pageY + 10}px`;
-  tooltip.style.left = `${e.pageX + 10}px`;
+  tooltip.style.top = ${e.pageY + 10}px;
+  tooltip.style.left = ${e.pageX + 10}px;
   tooltip.style.display = "block";
 }
 function ocultarTooltip() {
@@ -293,7 +293,7 @@ function renderMalla() {
     const contenedor = document.createElement("div");
     contenedor.className = "semestre";
     const encabezado = document.createElement("h3");
-    encabezado.textContent = `📘 ${titulo}`;
+    encabezado.textContent = 📘 ${titulo};
     contenedor.appendChild(encabezado);
 
     const fila = document.createElement("div");
@@ -312,11 +312,11 @@ function renderMalla() {
         const div = document.createElement("div");
         div.className = "ramo bloqueado";
         div.style.background = ramo.color || "#999";
-        div.textContent = `${ramo.codigo} - ${ramo.nombre}`;
+        div.textContent = ${ramo.codigo} - ${ramo.nombre};
 
         const requisitosArray = Array.isArray(ramo.requisitos) ? ramo.requisitos : [];
         const requisitos = requisitosArray.length ? requisitosArray.join(", ") : "Ninguno";
-        let tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
+        let tooltipTexto = Créditos: ${ramo.creditos}\nRequisitos: ${requisitos};
 
         // Verificar si está desbloqueado (cumple requisitos)
         const desbloqueado = !requisitosArray.length ||
@@ -366,7 +366,7 @@ function renderMalla() {
   });
 
   const porcentaje = datosMalla.length ? Math.round((aprobadosCount / datosMalla.length) * 100) : 0;
-  resumen.textContent = `Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%)`;
+  resumen.textContent = Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%);
   actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
   calcularYMostrarPPA();
 }
@@ -379,7 +379,7 @@ function abrirCalculadora() {
   // Crear modal
   const modal = document.createElement("div");
   modal.id = "calculadoraPromedios";
-  modal.style.cssText = `
+  modal.style.cssText = 
     position: fixed;
     top: 50%;
     left: 50%;
@@ -395,13 +395,13 @@ function abrirCalculadora() {
     user-select: none;
     animation: modalAppear 0.3s ease forwards;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  `;
+  ;
 
-  modal.innerHTML = `
+  modal.innerHTML = 
     <h3>Calculadora de Promedios</h3>
     <label for="selectRamo">Seleccione ramo:</label>
     <select id="selectRamo" style="width: 100%; margin-bottom: 20px; padding: 10px 12px; font-size: 1rem; font-weight: 600; border: 2px solid #2575fc; border-radius: 10px; color: #2575fc; outline: none; transition: border-color 0.3s ease;">
-      ${datosMalla.map(r => `<option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>`).join('')}
+      ${datosMalla.map(r => <option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>).join('')}
     </select>
     <div id="notasContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 20px; padding-right: 6px;"></div>
     <button id="agregarNotaBtn" style="background-color: #2575fc; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37,117,252,0.7);">Agregar nota</button>
@@ -410,7 +410,7 @@ function abrirCalculadora() {
     </div>
     <div id="resultadoPromedio" style="font-weight: 700; font-size: 1.4rem; color: #2980b9; text-align: center; margin-bottom: 20px;">Promedio: --</div>
     <button id="cerrarCalcBtn" style="background-color: #e74c3c; color: white; font-weight: 700; font-size: 1rem; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(231,76,60,0.8);">Cerrar</button>
-  `;
+  ;
 
   document.body.appendChild(modal);
 
@@ -493,7 +493,7 @@ function abrirCalculadora() {
       // Una fila vacía por defecto
       notasContainer.appendChild(crearFilaNota());
     }
-    resultadoPromedio.textContent = `Promedio: --`;
+    resultadoPromedio.textContent = Promedio: --;
   }
 
   // Cuando cambia el ramo seleccionado
@@ -539,7 +539,7 @@ function abrirCalculadora() {
     }
 
     const promedioCalculado = (sumaPonderada / 100).toFixed(2);
-    resultadoPromedio.textContent = `Promedio: ${promedioCalculado}`;
+    resultadoPromedio.textContent = Promedio: ${promedioCalculado};
 
     // Guardar promedio y notas en Firebase
     const codigo = selectRamo.value;
@@ -592,18 +592,18 @@ function calcularYMostrarPPA() {
   }
   if (sumaCreditos > 0) {
     const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
-    burbujaPPA.textContent = `PPA: ${ppa}`;
+    burbujaPPA.textContent = PPA: ${ppa};
   } else {
-    burbujaPPA.textContent = `PPA: --`;
+    burbujaPPA.textContent = PPA: --;
   }
 }
 
 // CSS para animación modal (puedes poner en styles.css si quieres)
 const style = document.createElement('style');
-style.textContent = `
+style.textContent = 
   @keyframes modalAppear {
     from {opacity: 0; transform: translate(-50%, -45%) scale(0.8);}
     to {opacity: 1; transform: translate(-50%, -50%) scale(1);}
   }
-`;
+;
 document.head.appendChild(style);
