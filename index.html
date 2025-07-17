@@ -28,7 +28,7 @@
   </main>
 
   <!-- Leyenda flotante -->
-  <aside id="leyenda" aria-label="Leyenda de estado de asignaturas" style="display:none;">
+  <aside id="leyenda" aria-label="Leyenda de estado de asignaturas" hidden>
     <h4>🔍 Leyenda</h4>
     <div class="leyenda-item">
       <div class="leyenda-cuadro c-aprobado" aria-hidden="true"></div> Aprobado
@@ -44,28 +44,10 @@
     </div>
   </aside>
 
-  <!-- Botón flotante: ¿Qué puedo tomar? -->
-  <button id="btn-tomables" class="boton-flotante" title="Ver ramos habilitados">¿Qué puedo tomar?</button>
-
-  <!-- Modal de ramos habilitados -->
-  <div id="modal-tomables" class="modal" hidden>
-    <div class="modal-contenido">
-      <span class="cerrar-modal" id="cerrar-modal-tomables">&times;</span>
-      <h3>Ramos habilitados para tomar 🎯</h3>
-      <ul id="lista-tomables"></ul>
-    </div>
-  </div>
-
-  <!-- Canvas para confeti -->
-  <canvas id="confetti-canvas" style="position: fixed; pointer-events: none; top: 0; left: 0; width: 100%; height: 100%; z-index: 999;"></canvas>
-
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
-  <!-- Script de confeti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <!-- Script principal -->
   <script src="main.js" defer></script>
