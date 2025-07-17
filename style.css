@@ -306,6 +306,7 @@ main {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
 /* --- Estilos para el icono flotante de calculadora --- */
 #iconoCalculadora {
   position: fixed;
@@ -510,3 +511,97 @@ main {
   z-index: 99999;
   border: 2px dotted orange; /* línea punteada naranja alrededor */
 }
+
+/* --- NUEVOS ESTILOS AGREGADOS --- */
+
+/* Botón flotante "¿Qué puedo tomar?" */
+#btn-tomables {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  color: white;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 6px 20px rgba(254, 180, 123, 0.6);
+  cursor: pointer;
+  z-index: 10000;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  user-select: none;
+}
+
+#btn-tomables:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 28px rgba(254, 180, 123, 0.85);
+}
+
+/* Modal de ramos habilitados */
+#modal-tomables {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 90vw;
+  max-width: 450px;
+  background: white;
+  color: #333;
+  border-radius: 20px;
+  padding: 25px 30px;
+  box-shadow: 0 12px 30px rgba(255, 140, 60, 0.3);
+  transform: translate(-50%, -50%);
+  z-index: 100001;
+  user-select: none;
+  animation: modalAppear 0.3s ease forwards;
+  display: none; /* por defecto oculto */
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+#modal-tomables h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 700;
+  color: #ff7e5f;
+  text-align: center;
+  font-size: 1.7rem;
+}
+
+#modal-tomables ul {
+  list-style: none;
+  padding-left: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#modal-tomables ul li {
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #444;
+}
+
+/* Burbuja flotante PPA (Promedio Ponderado Acumulado) */
+#burbujaPPA {
+  position: fixed;
+  bottom: 20px;
+  right: 130px; /* para no solaparse con el contadorCreditos */
+  background-color: #2575fc;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(37, 117, 252, 0.6);
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 9999;
+  transition: all 0.3s ease-in-out;
+  cursor: default;
+}
+
+#burbujaPPA:hover {
+  transform: scale(1.05);
+}
+
+/* Reutilizamos animación modalAppear ya definida arriba */
