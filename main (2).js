@@ -607,3 +607,120 @@ style.textContent =
   }
 ;
 document.head.appendChild(style);
+// Mostrar/ocultar botones flotantes y leyenda solo si está logueado
+function mostrarBotonesSiUsuarioLogueado() {
+  if (!usuario) return;
+  burbujaCreditos.style.display = "block";
+  burbujaPPA.style.display = "block";
+  iconoCalc.style.display = "flex";
+  document.getElementById("toggleLeyenda").style.display = "block";
+}
+function ocultarBotonesSiNoLogueado() {
+  burbujaCreditos.style.display = "none";
+  burbujaPPA.style.display = "none";
+  iconoCalc.style.display = "none";
+  document.getElementById("toggleLeyenda").style.display = "none";
+}
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    usuario = user;
+    loginContainer.style.display = "none";
+    appContainer.style.display = "block";
+    mostrarBotonesSiUsuarioLogueado();
+    try {
+      await cargarMalla();
+      await cargarProgreso();
+      renderMalla();
+      await revisarFelicitacionSemestral();  // revisar felicitaciones
+    } catch (e) {
+      console.error("Error cargando o renderizando:", e);
+    }
+  } else {
+    usuario = null;
+    loginContainer.style.display = "block";
+    appContainer.style.display = "none";
+    datosMalla = [];
+    progreso = {};
+    promedios = {};
+    ocultarBotonesSiNoLogueado();
+  }
+});
+
+// 🎉 Revisar felicitación por semestre
+async function revisarFelicitacionSemestral() {
+  if (!usuario) return;
+  const ref = db.collection("felicitaciones").doc(usuario.uid);
+  const snap = await ref.get();
+  let felicitados = snap.exists ? snap.data().felicitados || [] : [];
+
+  // Revisa si todos los ramos de algún semestre están aprobados y no ha sido felicitado
+  const semestres = [...new Set(datosMalla.map(r => r.semestre))].flat();
+  for (const s of semestres) {
+    const ramosSemestre = datosMalla.filter(r => {
+      const ss = Array.isArray(r.semestre) ? r.semestre : [r.semestre];
+      return ss.includes(s);
+    });
+    const todosAprobados = ramosSemestre.every(r => progreso[r.codigo]);
+    const yaFelicitado = felicitados.includes(s);
+
+    if (todosAprobados && !yaFelicitado && ramosSemestre.length > 0) {
+      mostrarConfetiYMensaje(`🎉 ¡Felicidades! Completaste el ${s}° semestre 🎓`);
+      felicitados.push(s);
+      await ref.set({ felicitados }, { merge: true });
+    }
+  }
+}
+
+// 🎊 Mostrar confeti y mensaje
+function mostrarConfetiYMensaje(mensaje) {
+  const contenedor = document.createElement("div");
+  contenedor.textContent = mensaje;
+  contenedor.style.cssText = `
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    color: #2c3e50;
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    font-size: 1.4rem;
+    font-weight: bold;
+    z-index: 100000;
+    text-align: center;
+  `;
+  document.body.appendChild(contenedor);
+  lanzarConfeti();
+  setTimeout(() => contenedor.remove(), 6000);
+}
+
+// 🎊 Confeti (versión simple sin librerías externas)
+function lanzarConfeti() {
+  for (let i = 0; i < 120; i++) {
+    const confeti = document.createElement("div");
+    confeti.style.position = "fixed";
+    confeti.style.width = "10px";
+    confeti.style.height = "10px";
+    confeti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
+    confeti.style.left = `${Math.random() * 100}vw`;
+    confeti.style.top = `-${Math.random() * 20}px`;
+    confeti.style.opacity = "0.8";
+    confeti.style.zIndex = "99999";
+    confeti.style.transform = `rotate(${Math.random() * 360}deg)`;
+    confeti.style.borderRadius = "50%";
+    confeti.style.pointerEvents = "none";
+
+    const duracion = 3000 + Math.random() * 3000;
+    confeti.style.transition = `top ${duracion}ms ease-out, left ${duracion}ms ease-in`;
+
+    document.body.appendChild(confeti);
+
+    setTimeout(() => {
+      confeti.style.top = `${100 + Math.random() * 10}vh`;
+      confeti.style.left = `${Math.random() * 100}vw`;
+    }, 10);
+
+    setTimeout(() => confeti.remove(), duracion + 500);
+  }
+}
