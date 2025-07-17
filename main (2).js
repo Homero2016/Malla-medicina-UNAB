@@ -24,7 +24,7 @@ function configurarLeyendaResponsive() {
   const leyendaBtn = document.createElement("button");
   leyendaBtn.textContent = "ℹ️ Ver leyenda";
   leyendaBtn.id = "toggleLeyenda";
-  leyendaBtn.style.cssText = 
+  leyendaBtn.style.cssText = `
     position: fixed;
     top: 20px;
     left: 20px;
@@ -37,7 +37,7 @@ function configurarLeyendaResponsive() {
     border: 2px solid #3498db;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     font-size: 14px;
-  ;
+  `;
   document.body.appendChild(leyendaBtn);
 
   leyenda.style.position = "fixed";
@@ -52,13 +52,13 @@ function configurarLeyendaResponsive() {
   leyenda.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
   leyenda.style.display = "none";
 
-  leyenda.innerHTML = 
+  leyenda.innerHTML = `
     <h4 style="margin-bottom: 10px; font-size: 1rem;">🎨 Significado de colores</h4>
     <div class="leyenda-item"><div class="leyenda-cuadro c-aprobado" style="background-color: #2ecc71;"></div> ✅ Aprobado (ya cursado)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-desbloqueado" style="background-color: #3498db;"></div> 📘 Desbloqueado (puedes tomarlo)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-bloqueado" style="background-color: #bdc3c7;"></div> 🔒 Bloqueado (faltan requisitos)</div>
     <div class="leyenda-item"><div class="leyenda-cuadro c-anual" style="border: 2px dashed orange;"></div> 🔁 Anual / pendiente</div>
-  ;
+  `;
 
   leyendaBtn.onclick = () => {
     leyenda.style.display = leyenda.style.display === "none" ? "block" : "none";
@@ -106,7 +106,7 @@ const iconoCalc = document.createElement("div");
 iconoCalc.id = "iconoCalculadora";
 iconoCalc.title = "Calculadora de promedios por ramo";
 iconoCalc.textContent = "📊 Promedios";
-iconoCalc.style.cssText = 
+iconoCalc.style.cssText = `
   position: fixed;
   bottom: 140px;
   right: 20px;
@@ -125,7 +125,7 @@ iconoCalc.style.cssText =
   gap: 8px;
   transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-;
+`;
 iconoCalc.onmouseenter = () => {
   iconoCalc.style.transform = "scale(1.1)";
   iconoCalc.style.boxShadow = "0 8px 24px rgba(52, 152, 219, 0.9)";
@@ -154,10 +154,12 @@ auth.onAuthStateChanged(async (user) => {
     usuario = user;
     loginContainer.style.display = "none";
     appContainer.style.display = "block";
+    mostrarBotonesSiUsuarioLogueado();
     try {
       await cargarMalla();
       await cargarProgreso();
       renderMalla();
+      await revisarFelicitacionSemestral();  // revisar felicitaciones
     } catch (e) {
       console.error("Error cargando o renderizando:", e);
     }
@@ -168,6 +170,7 @@ auth.onAuthStateChanged(async (user) => {
     datosMalla = [];
     progreso = {};
     promedios = {};
+    ocultarBotonesSiNoLogueado();
   }
 });
 
@@ -213,7 +216,7 @@ function contarCreditosAprobados(ramos, aprobados) {
 // Actualizar burbuja créditos
 function actualizarBurbujaCreditos(aprobados, ramos) {
   const total = contarCreditosAprobados(ramos, aprobados);
-  burbujaCreditos.textContent = ${total} créditos aprobados;
+  burbujaCreditos.textContent = `${total} créditos aprobados`;
 }
 
 // Ver si ramo está aprobado
@@ -226,8 +229,8 @@ function calcularYMostrarPPA() {
   let sumaNotasPorCreditos = 0;
   let sumaCreditos = 0;
   for (const ramo of datosMalla) {
-    if (progreso[ramo.codigo] && promedios[ramo.codigo]) {
-      const promedio = parseFloat(promedios[ramo.codigo]);
+    if (progreso[ramo.codigo] && promedios[ramo.codigo] && promedios[ramo.codigo].promedio) {
+      const promedio = parseFloat(promedios[ramo.codigo].promedio);
       if (!isNaN(promedio)) {
         sumaNotasPorCreditos += promedio * ramo.creditos;
         sumaCreditos += ramo.creditos;
@@ -236,9 +239,9 @@ function calcularYMostrarPPA() {
   }
   if (sumaCreditos > 0) {
     const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
-    burbujaPPA.textContent = PPA: ${ppa};
+    burbujaPPA.textContent = `PPA: ${ppa}`;
   } else {
-    burbujaPPA.textContent = PPA: --;
+    burbujaPPA.textContent = "PPA: --";
   }
 }
 
@@ -259,11 +262,11 @@ document.body.appendChild(tooltip);
 function mostrarTooltip(e, texto) {
   const codigo = e.target.textContent.split(" - ")[0];
   if (promedios[codigo]) {
-    texto += \nPromedio: ${promedios[codigo]};
+    texto += `\nPromedio: ${promedios[codigo].promedio || "--"}`;
   }
   tooltip.innerText = texto;
-  tooltip.style.top = ${e.pageY + 10}px;
-  tooltip.style.left = ${e.pageX + 10}px;
+  tooltip.style.top = `${e.pageY + 10}px`;
+  tooltip.style.left = `${e.pageX + 10}px`;
   tooltip.style.display = "block";
 }
 function ocultarTooltip() {
@@ -293,7 +296,7 @@ function renderMalla() {
     const contenedor = document.createElement("div");
     contenedor.className = "semestre";
     const encabezado = document.createElement("h3");
-    encabezado.textContent = 📘 ${titulo};
+    encabezado.textContent = `📘 ${titulo}`;
     contenedor.appendChild(encabezado);
 
     const fila = document.createElement("div");
@@ -312,11 +315,11 @@ function renderMalla() {
         const div = document.createElement("div");
         div.className = "ramo bloqueado";
         div.style.background = ramo.color || "#999";
-        div.textContent = ${ramo.codigo} - ${ramo.nombre};
+        div.textContent = `${ramo.codigo} - ${ramo.nombre}`;
 
         const requisitosArray = Array.isArray(ramo.requisitos) ? ramo.requisitos : [];
         const requisitos = requisitosArray.length ? requisitosArray.join(", ") : "Ninguno";
-        let tooltipTexto = Créditos: ${ramo.creditos}\nRequisitos: ${requisitos};
+        let tooltipTexto = `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}`;
 
         // Verificar si está desbloqueado (cumple requisitos)
         const desbloqueado = !requisitosArray.length ||
@@ -361,366 +364,433 @@ function renderMalla() {
         fila.appendChild(div);
       });
 
-    contenedor.appendChild(fila);
     mallaDiv.appendChild(contenedor);
+    mallaDiv.appendChild(fila);
   });
 
-  const porcentaje = datosMalla.length ? Math.round((aprobadosCount / datosMalla.length) * 100) : 0;
-  resumen.textContent = Avance: ${aprobadosCount}/${datosMalla.length} ramos (${porcentaje}%);
-  actualizarBurbujaCreditos(Object.keys(progreso), datosMalla);
+  actualizarBurbujaCreditos(Object.keys(progreso).filter(k => progreso[k]), datosMalla);
   calcularYMostrarPPA();
 }
 
-// --- Calculadora de promedios ---
-
-function abrirCalculadora() {
-  if (document.getElementById("calculadoraPromedios")) return; // Evitar abrir doble vez
-
-  // Crear modal
-  const modal = document.createElement("div");
-  modal.id = "calculadoraPromedios";
-  modal.style.cssText = 
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    color: #333;
-    padding: 30px 35px;
-    border-radius: 20px;
-    box-shadow: 0 12px 30px rgba(101, 60, 190, 0.35);
-    max-width: 400px;
-    width: 90vw;
-    z-index: 100000;
-    user-select: none;
-    animation: modalAppear 0.3s ease forwards;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  ;
-
-  modal.innerHTML = 
-    <h3>Calculadora de Promedios</h3>
-    <label for="selectRamo">Seleccione ramo:</label>
-    <select id="selectRamo" style="width: 100%; margin-bottom: 20px; padding: 10px 12px; font-size: 1rem; font-weight: 600; border: 2px solid #2575fc; border-radius: 10px; color: #2575fc; outline: none; transition: border-color 0.3s ease;">
-      ${datosMalla.map(r => <option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>).join('')}
-    </select>
-    <div id="notasContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 20px; padding-right: 6px;"></div>
-    <button id="agregarNotaBtn" style="background-color: #2575fc; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37,117,252,0.7);">Agregar nota</button>
-    <div style="text-align: center; margin-bottom: 20px;">
-      <button id="calcularBtn" style="background-color: #6a11cb; color: white; font-weight: 700; font-size: 1.1rem; padding: 12px 30px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(106,17,203,0.7);">Calcular promedio</button>
-    </div>
-    <div id="resultadoPromedio" style="font-weight: 700; font-size: 1.4rem; color: #2980b9; text-align: center; margin-bottom: 20px;">Promedio: --</div>
-    <button id="cerrarCalcBtn" style="background-color: #e74c3c; color: white; font-weight: 700; font-size: 1rem; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(231,76,60,0.8);">Cerrar</button>
-  ;
-
-  document.body.appendChild(modal);
-
-  const selectRamo = modal.querySelector("#selectRamo");
-  const notasContainer = modal.querySelector("#notasContainer");
-  const agregarNotaBtn = modal.querySelector("#agregarNotaBtn");
-  const calcularBtn = modal.querySelector("#calcularBtn");
-  const resultadoPromedio = modal.querySelector("#resultadoPromedio");
-  const cerrarBtn = modal.querySelector("#cerrarCalcBtn");
-
-  function crearFilaNota(valorNota = "", valorPeso = "") {
-    const fila = document.createElement("div");
-    fila.style.display = "flex";
-    fila.style.gap = "10px";
-    fila.style.marginBottom = "10px";
-
-    const inputNota = document.createElement("input");
-    inputNota.type = "number";
-    inputNota.placeholder = "Nota (0-100)";
-    inputNota.min = 0;
-    inputNota.max = 100;
-    inputNota.step = "0.01";
-    inputNota.value = valorNota;
-    inputNota.style.flex = "2";
-    inputNota.style.padding = "8px 10px";
-    inputNota.style.border = "1.5px solid #3498db";
-    inputNota.style.borderRadius = "10px";
-    inputNota.style.fontWeight = "600";
-    inputNota.style.fontSize = "1rem";
-    inputNota.style.color = "#2575fc";
-    inputNota.style.outline = "none";
-
-    const inputPeso = document.createElement("input");
-    inputPeso.type = "number";
-    inputPeso.placeholder = "Peso %";
-    inputPeso.min = 0;
-    inputPeso.max = 100;
-    inputPeso.step = "1";
-    inputPeso.value = valorPeso;
-    inputPeso.style.flex = "1";
-    inputPeso.style.padding = "8px 10px";
-    inputPeso.style.border = "1.5px solid #3498db";
-    inputPeso.style.borderRadius = "10px";
-    inputPeso.style.fontWeight = "600";
-    inputPeso.style.fontSize = "1rem";
-    inputPeso.style.color = "#2575fc";
-    inputPeso.style.outline = "none";
-
-    const btnEliminar = document.createElement("button");
-    btnEliminar.textContent = "✖";
-    btnEliminar.title = "Eliminar nota";
-    btnEliminar.style.background = "transparent";
-    btnEliminar.style.border = "none";
-    btnEliminar.style.color = "#e74c3c";
-    btnEliminar.style.fontSize = "1.3rem";
-    btnEliminar.style.cursor = "pointer";
-    btnEliminar.style.flex = "0";
-    btnEliminar.style.alignSelf = "center";
-
-    btnEliminar.onclick = () => {
-      fila.remove();
-    };
-
-    fila.appendChild(inputNota);
-    fila.appendChild(inputPeso);
-    fila.appendChild(btnEliminar);
-
-    return fila;
-  }
-
-  function cargarNotasGuardadas(codigoRamo) {
-    notasContainer.innerHTML = "";
-    if (promedios[codigoRamo] && typeof promedios[codigoRamo] === "object" && promedios[codigoRamo].notas) {
-      const notas = promedios[codigoRamo].notas;
-      notas.forEach(n => {
-        const fila = crearFilaNota(n.nota, n.peso);
-        notasContainer.appendChild(fila);
-      });
-    } else {
-      // Una fila vacía por defecto
-      notasContainer.appendChild(crearFilaNota());
-    }
-    resultadoPromedio.textContent = Promedio: --;
-  }
-
-  // Cuando cambia el ramo seleccionado
-  selectRamo.onchange = () => {
-    cargarNotasGuardadas(selectRamo.value);
-  };
-
-  agregarNotaBtn.onclick = () => {
-    notasContainer.appendChild(crearFilaNota());
-  };
-
-  calcularBtn.onclick = () => {
-    const filas = Array.from(notasContainer.children);
-    let sumaPesos = 0;
-    let sumaPonderada = 0;
-    let error = false;
-
-    filas.forEach(fila => {
-      const inputs = fila.querySelectorAll("input");
-      const nota = parseFloat(inputs[0].value);
-      const peso = parseFloat(inputs[1].value);
-
-      if (isNaN(nota) || nota < 0 || nota > 100) {
-        error = true;
-        alert("Por favor ingresa notas entre 0 y 100.");
-        return;
-      }
-      if (isNaN(peso) || peso < 0 || peso > 100) {
-        error = true;
-        alert("Por favor ingresa pesos entre 0 y 100.");
-        return;
-      }
-
-      sumaPesos += peso;
-      sumaPonderada += (nota * peso);
-    });
-
-    if (error) return;
-
-    if (sumaPesos !== 100) {
-      alert("La suma de los pesos debe ser exactamente 100%.");
-      return;
-    }
-
-    const promedioCalculado = (sumaPonderada / 100).toFixed(2);
-    resultadoPromedio.textContent = Promedio: ${promedioCalculado};
-
-    // Guardar promedio y notas en Firebase
-    const codigo = selectRamo.value;
-    const notasGuardar = filas.map(fila => {
-      const inputs = fila.querySelectorAll("input");
-      return {
-        nota: inputs[0].value,
-        peso: inputs[1].value,
-      };
-    });
-
-    promedios[codigo] = {
-      promedio: promedioCalculado,
-      notas: notasGuardar,
-    };
-
-    guardarPromediosFirebase();
-    calcularYMostrarPPA();
-  };
-
-  cerrarBtn.onclick = () => {
-    modal.remove();
-  };
-
-  // Cargar inicialmente las notas para el ramo seleccionado
-  cargarNotasGuardadas(selectRamo.value);
-}
-
-async function guardarPromediosFirebase() {
-  if (!usuario) return;
-  try {
-    await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
-  } catch (error) {
-    console.error("Error guardando promedios:", error);
-  }
-}
-
-// Para el PPA calcular desde el objeto promedios (promedio calculado, no solo el promedio plano)
-function calcularYMostrarPPA() {
-  let sumaNotasPorCreditos = 0;
-  let sumaCreditos = 0;
-  for (const ramo of datosMalla) {
-    if (progreso[ramo.codigo] && promedios[ramo.codigo] && promedios[ramo.codigo].promedio) {
-      const promedio = parseFloat(promedios[ramo.codigo].promedio);
-      if (!isNaN(promedio)) {
-        sumaNotasPorCreditos += promedio * ramo.creditos;
-        sumaCreditos += ramo.creditos;
-      }
-    }
-  }
-  if (sumaCreditos > 0) {
-    const ppa = (sumaNotasPorCreditos / sumaCreditos).toFixed(2);
-    burbujaPPA.textContent = PPA: ${ppa};
-  } else {
-    burbujaPPA.textContent = PPA: --;
-  }
-}
-
-// CSS para animación modal (puedes poner en styles.css si quieres)
-const style = document.createElement('style');
-style.textContent = 
-  @keyframes modalAppear {
-    from {opacity: 0; transform: translate(-50%, -45%) scale(0.8);}
-    to {opacity: 1; transform: translate(-50%, -50%) scale(1);}
-  }
-;
-document.head.appendChild(style);
-// Mostrar/ocultar botones flotantes y leyenda solo si está logueado
+// Función para mostrar botones solo si hay usuario logueado
 function mostrarBotonesSiUsuarioLogueado() {
-  if (!usuario) return;
   burbujaCreditos.style.display = "block";
   burbujaPPA.style.display = "block";
   iconoCalc.style.display = "flex";
+  leyenda.style.display = "none";
   document.getElementById("toggleLeyenda").style.display = "block";
 }
+// Ocultar botones si no hay usuario
 function ocultarBotonesSiNoLogueado() {
   burbujaCreditos.style.display = "none";
   burbujaPPA.style.display = "none";
   iconoCalc.style.display = "none";
+  leyenda.style.display = "none";
   document.getElementById("toggleLeyenda").style.display = "none";
 }
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    usuario = user;
-    loginContainer.style.display = "none";
-    appContainer.style.display = "block";
-    mostrarBotonesSiUsuarioLogueado();
-    try {
-      await cargarMalla();
-      await cargarProgreso();
-      renderMalla();
-      await revisarFelicitacionSemestral();  // revisar felicitaciones
-    } catch (e) {
-      console.error("Error cargando o renderizando:", e);
-    }
-  } else {
-    usuario = null;
-    loginContainer.style.display = "block";
-    appContainer.style.display = "none";
-    datosMalla = [];
-    progreso = {};
-    promedios = {};
-    ocultarBotonesSiNoLogueado();
-  }
-});
 
-// 🎉 Revisar felicitación por semestre
+// Abrir modal calculadora
+function abrirCalculadora() {
+  const modal = document.createElement("div");
+  modal.id = "modalCalculadora";
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.width = "100%";
+  modal.style.height = "100%";
+  modal.style.backgroundColor = "rgba(0,0,0,0.5)";
+  modal.style.display = "flex";
+  modal.style.justifyContent = "center";
+  modal.style.alignItems = "center";
+  modal.style.zIndex = "100000";
+
+  modal.innerHTML = `
+    <div style="
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 350px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    ">
+      <h2 style="margin-top: 0; font-size: 1.5rem; color: #3498db;">Calculadora de Promedios</h2>
+      <label for="selectRamo" style="display: block; margin-bottom: 8px; font-weight: 600;">Selecciona un ramo:</label>
+      <select id="selectRamo" style="width: 100%; padding: 8px 6px; margin-bottom: 12px; font-size: 1rem;">
+        ${datosMalla
+          .map(r => `<option value="${r.codigo}">${r.codigo} - ${r.nombre}</option>`)
+          .join("")}
+      </select>
+      <div id="pruebasContainer"></div>
+      <button id="agregarPruebaBtn" style="
+        margin-top: 12px;
+        padding: 8px 12px;
+        font-size: 1rem;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      ">Agregar prueba</button>
+      <div style="margin-top: 16px; font-weight: 600; font-size: 1.1rem;">
+        Promedio calculado: <span id="promedioCalculado">0.00</span>
+      </div>
+      <button id="guardarPromedioBtn" style="
+        margin-top: 20px;
+        padding: 10px 18px;
+        font-size: 1.1rem;
+        background: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+      ">Guardar promedio</button>
+      <button id="cerrarModalBtn" style="
+        margin-top: 12px;
+        padding: 10px 18px;
+        font-size: 1.1rem;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+      ">Cerrar</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const pruebasContainer = modal.querySelector("#pruebasContainer");
+  const selectRamo = modal.querySelector("#selectRamo");
+  const promedioCalculadoSpan = modal.querySelector("#promedioCalculado");
+  const agregarPruebaBtn = modal.querySelector("#agregarPruebaBtn");
+  const guardarPromedioBtn = modal.querySelector("#guardarPromedioBtn");
+  const cerrarModalBtn = modal.querySelector("#cerrarModalBtn");
+
+  // Crear un input de prueba (nota y porcentaje)
+  function crearPrueba(nota = "", porcentaje = "") {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.gap = "12px";
+    div.style.marginBottom = "8px";
+
+    const inputNota = document.createElement("input");
+    inputNota.type = "number";
+    inputNota.min = "1";
+    inputNota.max = "7";
+    inputNota.step = "0.01";
+    inputNota.placeholder = "Nota";
+    inputNota.style.flex = "1";
+    inputNota.value = nota;
+
+    const inputPorc = document.createElement("input");
+    inputPorc.type = "number";
+    inputPorc.min = "1";
+    inputPorc.max = "100";
+    inputPorc.placeholder = "%";
+    inputPorc.style.flex = "1";
+    inputPorc.value = porcentaje;
+
+    div.appendChild(inputNota);
+    div.appendChild(inputPorc);
+
+    function calcular() {
+      const notas = [];
+      const inputs = pruebasContainer.querySelectorAll("div");
+      inputs.forEach(divPrueba => {
+        const notaI = divPrueba.querySelector("input[type='number']:nth-child(1)");
+        const porcI = divPrueba.querySelector("input[type='number']:nth-child(2)");
+        if (notaI.value && porcI.value) {
+          notas.push({
+            nota: parseFloat(notaI.value),
+            porcentaje: parseFloat(porcI.value),
+          });
+        }
+      });
+      const sumaPorc = notas.reduce((acc, cur) => acc + cur.porcentaje, 0);
+      if (sumaPorc !== 100) {
+        promedioCalculadoSpan.textContent = "⚠️ Suma % ≠ 100";
+        return;
+      }
+      let promedio = 0;
+      notas.forEach(({ nota, porcentaje }) => {
+        promedio += (nota * porcentaje) / 100;
+      });
+      promedioCalculadoSpan.textContent = promedio.toFixed(2);
+    }
+
+    inputNota.oninput = calcular;
+    inputPorc.oninput = calcular;
+
+    return div;
+  }
+
+  // Cargar pruebas guardadas si existen
+  function cargarPruebasGuardadas(codigo) {
+    pruebasContainer.innerHTML = "";
+    if (promedios[codigo] && promedios[codigo].detalles) {
+      for (const detalle of promedios[codigo].detalles) {
+        const p = crearPrueba(detalle.nota, detalle.porcentaje);
+        pruebasContainer.appendChild(p);
+      }
+    } else {
+      // Default una prueba vacía
+      const p = crearPrueba();
+      pruebasContainer.appendChild(p);
+    }
+    calcularPromedio();
+  }
+
+  // Calcular promedio (función que puede llamarse después de cualquier cambio)
+  function calcularPromedio() {
+    const notas = [];
+    const divs = pruebasContainer.querySelectorAll("div");
+    divs.forEach(divPrueba => {
+      const notaI = divPrueba.querySelector("input[type='number']:nth-child(1)");
+      const porcI = divPrueba.querySelector("input[type='number']:nth-child(2)");
+      if (notaI.value && porcI.value) {
+        notas.push({
+          nota: parseFloat(notaI.value),
+          porcentaje: parseFloat(porcI.value),
+        });
+      }
+    });
+    const sumaPorc = notas.reduce((acc, cur) => acc + cur.porcentaje, 0);
+    if (sumaPorc !== 100) {
+      promedioCalculadoSpan.textContent = "⚠️ Suma % ≠ 100";
+      return;
+    }
+    let promedio = 0;
+    notas.forEach(({ nota, porcentaje }) => {
+      promedio += (nota * porcentaje) / 100;
+    });
+    promedioCalculadoSpan.textContent = promedio.toFixed(2);
+  }
+
+  agregarPruebaBtn.onclick = () => {
+    const p = crearPrueba();
+    pruebasContainer.appendChild(p);
+  };
+
+  selectRamo.onchange = () => {
+    cargarPruebasGuardadas(selectRamo.value);
+  };
+
+  guardarPromedioBtn.onclick = async () => {
+    const codigo = selectRamo.value;
+    // Validar suma 100%
+    const detalles = [];
+    let sumaPorc = 0;
+    let promedio = 0;
+    const divs = pruebasContainer.querySelectorAll("div");
+    for (const divPrueba of divs) {
+      const notaI = divPrueba.querySelector("input[type='number']:nth-child(1)");
+      const porcI = divPrueba.querySelector("input[type='number']:nth-child(2)");
+      if (!notaI.value || !porcI.value) {
+        alert("Complete todas las notas y porcentajes.");
+        return;
+      }
+      const notaVal = parseFloat(notaI.value);
+      const porcVal = parseFloat(porcI.value);
+      if (notaVal < 1 || notaVal > 7 || porcVal < 1 || porcVal > 100) {
+        alert("Notas entre 1 y 7, porcentajes entre 1 y 100.");
+        return;
+      }
+      detalles.push({ nota: notaVal, porcentaje: porcVal });
+      sumaPorc += porcVal;
+      promedio += (notaVal * porcVal) / 100;
+    }
+    if (sumaPorc !== 100) {
+      alert("La suma de porcentajes debe ser 100%");
+      return;
+    }
+    // Guardar promedio y detalles en Firestore
+    promedios[codigo] = {
+      promedio: promedio.toFixed(2),
+      detalles,
+    };
+    try {
+      await db.collection("progresos").doc(usuario.uid).set({ progreso, promedios }, { merge: true });
+      alert(`Promedio guardado para ${codigo}: ${promedio.toFixed(2)}`);
+      calcularYMostrarPPA();
+      modal.remove();
+      renderMalla();
+    } catch (e) {
+      console.error("Error guardando promedio:", e);
+      alert("Error guardando promedio, intente de nuevo.");
+    }
+  };
+
+  cerrarModalBtn.onclick = () => {
+    modal.remove();
+  };
+
+  cargarPruebasGuardadas(selectRamo.value);
+}
+
+// Función para revisar si se debe mostrar felicitación de semestre
 async function revisarFelicitacionSemestral() {
   if (!usuario) return;
-  const ref = db.collection("felicitaciones").doc(usuario.uid);
-  const snap = await ref.get();
-  let felicitados = snap.exists ? snap.data().felicitados || [] : [];
 
-  // Revisa si todos los ramos de algún semestre están aprobados y no ha sido felicitado
-  const semestres = [...new Set(datosMalla.map(r => r.semestre))].flat();
-  for (const s of semestres) {
-    const ramosSemestre = datosMalla.filter(r => {
-      const ss = Array.isArray(r.semestre) ? r.semestre : [r.semestre];
-      return ss.includes(s);
-    });
-    const todosAprobados = ramosSemestre.every(r => progreso[r.codigo]);
-    const yaFelicitado = felicitados.includes(s);
+  // Contar semestres completos
+  const semestresCompletos = new Set();
 
-    if (todosAprobados && !yaFelicitado && ramosSemestre.length > 0) {
-      mostrarConfetiYMensaje(`🎉 ¡Felicidades! Completaste el ${s}° semestre 🎓`);
-      felicitados.push(s);
-      await ref.set({ felicitados }, { merge: true });
+  const aprobadosCodigos = Object.keys(progreso).filter(k => progreso[k]);
+
+  const semestresPorRamo = {};
+  for (const ramo of datosMalla) {
+    const sems = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
+    semestresPorRamo[ramo.codigo] = sems;
+  }
+
+  for (const semNum of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]) {
+    const ramosSem = datosMalla.filter(r => {
+      const s = Array.isArray(r.semestre) ? r.semestre : [r.semestre];
+      return s.includes(semNum);
+    }).map(r => r.codigo);
+    const todosAprobados = ramosSem.every(cod => aprobadosCodigos.includes(cod));
+    if (todosAprobados && ramosSem.length > 0) semestresCompletos.add(semNum);
+  }
+
+  // Obtener felicitaciones guardadas para no repetir
+  const userDoc = await db.collection("felicitaciones").doc(usuario.uid).get();
+  let felicitudesGuardadas = [];
+  if (userDoc.exists) {
+    felicitudesGuardadas = userDoc.data().semestres || [];
+  }
+
+  for (const sem of semestresCompletos) {
+    if (!felicitudesGuardadas.includes(sem)) {
+      mostrarFelicitacion(sem);
+      felicitudesGuardadas.push(sem);
     }
   }
+
+  await db.collection("felicitaciones").doc(usuario.uid).set({ semestres: felicitudesGuardadas }, { merge: true });
 }
 
-// 🎊 Mostrar confeti y mensaje
-function mostrarConfetiYMensaje(mensaje) {
-  const contenedor = document.createElement("div");
-  contenedor.textContent = mensaje;
-  contenedor.style.cssText = `
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    color: #2c3e50;
-    padding: 25px 30px;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-    font-size: 1.4rem;
-    font-weight: bold;
-    z-index: 100000;
-    text-align: center;
+// Mostrar confeti y mensaje motivacional al aprobar semestre
+function mostrarFelicitacion(semestre) {
+  const modal = document.createElement("div");
+  modal.id = "modalFelicitacion";
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.width = "100%";
+  modal.style.height = "100%";
+  modal.style.backgroundColor = "rgba(0,0,0,0.75)";
+  modal.style.display = "flex";
+  modal.style.justifyContent = "center";
+  modal.style.alignItems = "center";
+  modal.style.zIndex = "100001";
+
+  modal.innerHTML = `
+    <div style="
+      background: white;
+      border-radius: 16px;
+      padding: 40px 32px;
+      max-width: 400px;
+      text-align: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      position: relative;
+    ">
+      <h2 style="color: #2ecc71; font-size: 2.4rem; margin-bottom: 16px;">🎉 ¡Felicitaciones! 🎉</h2>
+      <p style="font-size: 1.2rem; margin-bottom: 24px;">Has completado el semestre <strong>${semestre}°</strong>. ¡Sigue así, estás haciendo un gran trabajo! 💪</p>
+      <button id="cerrarFelicitacionBtn" style="
+        padding: 12px 28px;
+        font-size: 1.1rem;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+      ">Cerrar</button>
+      <canvas id="confettiCanvas" style="
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+        border-radius: 16px;
+      "></canvas>
+    </div>
   `;
-  document.body.appendChild(contenedor);
-  lanzarConfeti();
-  setTimeout(() => contenedor.remove(), 6000);
+
+  document.body.appendChild(modal);
+
+  const cerrarBtn = document.getElementById("cerrarFelicitacionBtn");
+  cerrarBtn.onclick = () => {
+    modal.remove();
+  };
+
+  // Lanzar confeti
+  lanzarConfeti("confettiCanvas");
 }
 
-// 🎊 Confeti (versión simple sin librerías externas)
-function lanzarConfeti() {
-  for (let i = 0; i < 120; i++) {
-    const confeti = document.createElement("div");
-    confeti.style.position = "fixed";
-    confeti.style.width = "10px";
-    confeti.style.height = "10px";
-    confeti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
-    confeti.style.left = `${Math.random() * 100}vw`;
-    confeti.style.top = `-${Math.random() * 20}px`;
-    confeti.style.opacity = "0.8";
-    confeti.style.zIndex = "99999";
-    confeti.style.transform = `rotate(${Math.random() * 360}deg)`;
-    confeti.style.borderRadius = "50%";
-    confeti.style.pointerEvents = "none";
+// Confeti simple con canvas
+function lanzarConfeti(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
 
-    const duracion = 3000 + Math.random() * 3000;
-    confeti.style.transition = `top ${duracion}ms ease-out, left ${duracion}ms ease-in`;
+  const confetis = [];
 
-    document.body.appendChild(confeti);
-
-    setTimeout(() => {
-      confeti.style.top = `${100 + Math.random() * 10}vh`;
-      confeti.style.left = `${Math.random() * 100}vw`;
-    }, 10);
-
-    setTimeout(() => confeti.remove(), duracion + 500);
+  function random(min, max) {
+    return Math.random() * (max - min) + min;
   }
+
+  class Confeti {
+    constructor() {
+      this.x = random(0, canvas.width);
+      this.y = random(-canvas.height, 0);
+      this.size = random(6, 12);
+      this.speed = random(1, 4);
+      this.angle = random(0, 2 * Math.PI);
+      this.color = `hsl(${random(0, 360)}, 70%, 60%)`;
+      this.rotationSpeed = random(-0.1, 0.1);
+    }
+    update() {
+      this.y += this.speed;
+      this.angle += this.rotationSpeed;
+      if (this.y > canvas.height) {
+        this.y = random(-canvas.height, 0);
+        this.x = random(0, canvas.width);
+      }
+    }
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = this.color;
+      ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+      ctx.restore();
+    }
+  }
+
+  for (let i = 0; i < 120; i++) {
+    confetis.push(new Confeti());
+  }
+
+  function animar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetis.forEach(c => {
+      c.update();
+      c.draw();
+    });
+    requestAnimationFrame(animar);
+  }
+  animar();
+
+  // Parar confeti después de 7 segundos
+  setTimeout(() => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.remove();
+  }, 7000);
 }
