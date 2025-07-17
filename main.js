@@ -142,9 +142,8 @@ let datosMalla = [];
 let progreso = {};
 let promedios = {};
 
-// --- INICIO: Añadir burbuja de felicitación y confeti --- //
+// --- INICIO: Añadir burbuja de felicitación y confeti ---
 
-// Crear contenedor para burbuja de felicitación
 const burbujaFelicitacion = document.createElement("div");
 burbujaFelicitacion.id = "burbujaFelicitacion";
 burbujaFelicitacion.style.position = "fixed";
@@ -160,10 +159,9 @@ burbujaFelicitacion.style.fontSize = "1.25rem";
 burbujaFelicitacion.style.boxShadow = "0 6px 18px rgba(101, 60, 190, 0.8)";
 burbujaFelicitacion.style.zIndex = "10000";
 burbujaFelicitacion.style.userSelect = "none";
-burbujaFelicitacion.style.display = "none"; // Oculto al inicio
+burbujaFelicitacion.style.display = "none";
 document.body.appendChild(burbujaFelicitacion);
 
-// Crear canvas para confeti
 const confetiCanvas = document.createElement("canvas");
 confetiCanvas.id = "confetiCanvas";
 confetiCanvas.style.position = "fixed";
@@ -173,11 +171,10 @@ confetiCanvas.style.width = "100%";
 confetiCanvas.style.height = "100%";
 confetiCanvas.style.pointerEvents = "none";
 confetiCanvas.style.zIndex = "9999";
-confetiCanvas.style.display = "none"; // Oculto al inicio
+confetiCanvas.style.display = "none";
 document.body.appendChild(confetiCanvas);
 
-// Guardar qué semestres ya felicité para no repetir
-let semestresFelic = {}; // se cargará de Firestore
+let semestresFelic = {};
 
 async function cargarSemestresFelic() {
   if (!usuario) return;
@@ -203,7 +200,6 @@ async function guardarSemestreFelic(semestre) {
   }
 }
 
-// Detectar semestres completados y mostrar felicitación si no se ha mostrado antes
 async function verificarSemestreCompletado() {
   if (!usuario) return;
 
@@ -216,495 +212,87 @@ async function verificarSemestreCompletado() {
     { titulo: "6° Semestre", incluye: [6] },
     { titulo: "7° Semestre", incluye: [7] },
     { titulo: "8° Semestre", incluye: [8] },
-    { titulo: "5° Año", incluye: [9, 10] },
-    { titulo: "6° Año", incluye: [11, 12] },
-    { titulo: "7° Año", incluye: [13, 14] },
+    { titulo: "9° Semestre", incluye: [9] },
+    { titulo: "10° Semestre", incluye: [10] },
+    { titulo: "11° Semestre", incluye: [11] },
+    { titulo: "12° Semestre", incluye: [12] },
+    { titulo: "13° Semestre", incluye: [13] },
+    { titulo: "14° Semestre", incluye: [14] }
   ];
 
-  for (const sem of agrupadores) {
-    const ramosSemestre = datosMalla.filter(ramo => {
-      const s = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
-      return s.some(n => sem.incluye.includes(n));
-    });
+  for (const grupo of agrupadores) {
+    if (semestresFelic[grupo.titulo]) continue; // ya felicitado
 
-    const todosAprobados = ramosSemestre.every(ramo => progreso[ramo.codigo] === true);
+    // Verificar si todos los ramos del semestre están aprobados
+    let completado = true;
+    for (const ramo of datosMalla) {
+      if (grupo.incluye.includes(ramo.semestre)) {
+        if (!progreso[ramo.codigo]) {
+          completado = false;
+          break;
+        }
+      }
+    }
 
-    if (todosAprobados && !semestresFelic[sem.titulo]) {
-      mostrarFelicitacion(sem.titulo);
-      await guardarSemestreFelic(sem.titulo);
+    if (completado) {
+      mostrarFelicitacion(`¡Felicitaciones! Has completado el ${grupo.titulo}`);
+      await guardarSemestreFelic(grupo.titulo);
+      break; // sólo una felicitación a la vez
     }
   }
 }
 
-function mostrarFelicitacion(semestre) {
-  burbujaFelicitacion.textContent = `🎉 ¡Felicidades! Completaste el ${semestre}. Sigue así 👏`;
+function mostrarFelicitacion(mensaje) {
+  burbujaFelicitacion.textContent = mensaje;
   burbujaFelicitacion.style.display = "block";
-  lanzarConfeti();
+  confetiCanvas.style.display = "block";
+  iniciarConfeti();
 
   setTimeout(() => {
     burbujaFelicitacion.style.display = "none";
-  }, 6000);
-}
-
-// Confeti simple basado en canvas - código adaptado y simplificado
-function lanzarConfeti() {
-  const confetiCtx = confetiCanvas.getContext("2d");
-  confetiCanvas.width = window.innerWidth;
-  confetiCanvas.height = window.innerHeight;
-  confetiCanvas.style.display = "block";
-
-  const colors = ["#ff0a54", "#ff477e", "#ff85a1", "#fbb1b1", "#f9bec7"];
-  const confetis = [];
-
-  for (let i = 0; i < 150; i++) {
-    confetis.push({
-      x: Math.random() * confetiCanvas.width,
-      y: Math.random() * confetiCanvas.height - confetiCanvas.height,
-      r: (Math.random() * 6) + 4,
-      d: Math.random() * 150 + 10,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      tilt: Math.floor(Math.random() * 10) - 10,
-      tiltAngle: 0,
-      tiltAngleIncrement: (Math.random() * 0.07) + 0.05,
-    });
-  }
-
-  let animationFrame;
-
-  function draw() {
-    confetiCtx.clearRect(0, 0, confetiCanvas.width, confetiCanvas.height);
-    confetis.forEach((c) => {
-      confetiCtx.beginPath();
-      confetiCtx.lineWidth = c.r / 2;
-      confetiCtx.strokeStyle = c.color;
-      confetiCtx.moveTo(c.x + c.tilt + (c.r / 4), c.y);
-      confetiCtx.lineTo(c.x + c.tilt, c.y + c.tilt + (c.r / 4));
-      confetiCtx.stroke();
-    });
-    update();
-  }
-
-  function update() {
-    confetis.forEach(c => {
-      c.tiltAngle += c.tiltAngleIncrement;
-      c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
-      c.x += Math.sin(c.d);
-      c.tilt = Math.sin(c.tiltAngle) * 15;
-
-      if (c.y > confetiCanvas.height) {
-        c.x = Math.random() * confetiCanvas.width;
-        c.y = -20;
-      }
-    });
-  }
-
-  function run() {
-    draw();
-    animationFrame = requestAnimationFrame(run);
-  }
-  run();
-
-  setTimeout(() => {
-    cancelAnimationFrame(animationFrame);
     confetiCanvas.style.display = "none";
-  }, 6000);
-}
-// --- FIN: burbuja y confeti --- //
-
-
-// Login Google
-loginBtn.onclick = () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider);
-};
-
-// Cambios en autenticación
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    usuario = user;
-    loginContainer.style.display = "none";
-    appContainer.style.display = "block";
-    try {
-      await cargarMalla();
-      await cargarProgreso();
-      await cargarSemestresFelic(); // cargar los semestres felicitados previos
-      renderMalla();
-      await verificarSemestreCompletado(); // verificar si hay semestre completado ahora
-    } catch (e) {
-      console.error("Error cargando o renderizando:", e);
-    }
-  } else {
-    usuario = null;
-    loginContainer.style.display = "block";
-    appContainer.style.display = "none";
-    datosMalla = [];
-    progreso = {};
-    promedios = {};
-    semestresFelic = {};
-    mallaDiv.innerHTML = "";
-    resumen.textContent = "";
-  }
-});
-
-// Funciones para cargar datos desde Firestore
-async function cargarMalla() {
-  const snapshot = await db.collection("malla").get();
-  datosMalla = snapshot.docs.map(doc => doc.data());
+    detenerConfeti();
+  }, 7000);
 }
 
-async function cargarProgreso() {
-  if (!usuario) return;
-  const doc = await db.collection("progreso").doc(usuario.uid).get();
-  progreso = doc.exists ? doc.data() : {};
-  const docProm = await db.collection("promedios").doc(usuario.uid).get();
-  promedios = docProm.exists ? docProm.data() : {};
-}
+// --- Fin felicitación y confeti ---
 
-// Guardar progreso al marcar o desmarcar ramo
-async function guardarProgreso() {
-  if (!usuario) return;
-  try {
-    await db.collection("progreso").doc(usuario.uid).set(progreso);
-  } catch (e) {
-    console.error("Error guardando progreso:", e);
-  }
-}
-
-// Guardar promedio de ramo
-async function guardarPromedio(codigo, promedio) {
-  if (!usuario) return;
-  promedios[codigo] = promedio;
-  try {
-    await db.collection("promedios").doc(usuario.uid).set(promedios);
-  } catch (e) {
-    console.error("Error guardando promedio:", e);
-  }
-}
-
-// Renderizar malla
-function renderMalla() {
-  mallaDiv.innerHTML = "";
-  const semestresMap = new Map();
-
-  datosMalla.forEach(ramo => {
-    const sems = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
-    sems.forEach(s => {
-      if (!semestresMap.has(s)) semestresMap.set(s, []);
-      semestresMap.get(s).push(ramo);
-    });
-  });
-
-  // Ordenar semestres
-  const semestresOrdenados = Array.from(semestresMap.keys()).sort((a, b) => a - b);
-
-  semestresOrdenados.forEach(semestre => {
-    const divSemestre = document.createElement("div");
-    divSemestre.className = "semestre";
-    divSemestre.style.marginBottom = "20px";
-
-    const tituloSemestre = document.createElement("h3");
-    tituloSemestre.textContent = `Semestre ${semestre}`;
-    tituloSemestre.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-    tituloSemestre.style.color = "#2575fc";
-    divSemestre.appendChild(tituloSemestre);
-
-    const contenedorRamos = document.createElement("div");
-    contenedorRamos.style.display = "flex";
-    contenedorRamos.style.flexWrap = "wrap";
-    contenedorRamos.style.gap = "8px";
-
-    semestresMap.get(semestre).forEach(ramo => {
-      const divRamo = document.createElement("div");
-      divRamo.className = "ramo";
-      divRamo.textContent = `${ramo.codigo} - ${ramo.nombre}`;
-      divRamo.style.padding = "8px 14px";
-      divRamo.style.borderRadius = "12px";
-      divRamo.style.cursor = "pointer";
-      divRamo.style.userSelect = "none";
-      divRamo.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-      divRamo.style.fontSize = "14px";
-      divRamo.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-
-      // Colores según estado
-      if (progreso[ramo.codigo] === true) {
-        divRamo.style.backgroundColor = "#2ecc71"; // verde aprobado
-        divRamo.style.color = "white";
-      } else if (ramoRequisitosCumplidos(ramo)) {
-        divRamo.style.backgroundColor = "#3498db"; // azul desbloqueado
-        divRamo.style.color = "white";
-      } else {
-        divRamo.style.backgroundColor = "#bdc3c7"; // gris bloqueado
-        divRamo.style.color = "#555";
-        divRamo.style.cursor = "not-allowed";
-      }
-
-      // Tooltip info (créditos, requisitos, promedio)
-      divRamo.title = generarTooltip(ramo);
-
-      // Click para marcar/desmarcar aprobado (solo si desbloqueado)
-      divRamo.onclick = async () => {
-        if (!ramoRequisitosCumplidos(ramo)) return; // no hace nada si bloqueado
-        progreso[ramo.codigo] = !progreso[ramo.codigo];
-        await guardarProgreso();
-        renderMalla();
-        await verificarSemestreCompletado(); // verificar si completó semestre
-        actualizarBurbujaCreditos();
-        actualizarBurbujaPPA();
-      };
-
-      contenedorRamos.appendChild(divRamo);
-    });
-
-    divSemestre.appendChild(contenedorRamos);
-    mallaDiv.appendChild(divSemestre);
-  });
-
-  actualizarBurbujaCreditos();
-  actualizarBurbujaPPA();
-}
-
-// Verifica si se cumplen requisitos para desbloquear ramo
-function ramoRequisitosCumplidos(ramo) {
-  if (!ramo.requisitos || ramo.requisitos.length === 0) return true;
-  return ramo.requisitos.every(req => progreso[req] === true);
-}
-
-// Genera texto para tooltip
-function generarTooltip(ramo) {
-  const requisitos = (ramo.requisitos && ramo.requisitos.length > 0) ? ramo.requisitos.join(", ") : "Ninguno";
-  const promedio = promedios[ramo.codigo] !== undefined ? promedios[ramo.codigo].toFixed(2) : "Sin promedio";
-  return `Créditos: ${ramo.creditos}\nRequisitos: ${requisitos}\nPromedio: ${promedio}`;
-}
-
-// Actualizar burbuja créditos aprobados
-function actualizarBurbujaCreditos() {
-  let totalCreditos = 0;
-  datosMalla.forEach(ramo => {
-    if (progreso[ramo.codigo] === true) totalCreditos += ramo.creditos;
-  });
-  burbujaCreditos.textContent = `Créditos Aprobados: ${totalCreditos}`;
-}
-
-// Calcular PPA (promedio ponderado acumulado)
-function calcularPPA() {
-  let sumaPesos = 0;
-  let sumaProductos = 0;
-  datosMalla.forEach(ramo => {
-    if (progreso[ramo.codigo] === true && promedios[ramo.codigo] !== undefined) {
-      sumaPesos += ramo.creditos;
-      sumaProductos += promedios[ramo.codigo] * ramo.creditos;
-    }
-  });
-  return sumaPesos > 0 ? sumaProductos / sumaPesos : 0;
-}
-
-// Actualizar burbuja PPA
-function actualizarBurbujaPPA() {
-  const ppa = calcularPPA();
-  if (ppa > 0) {
-    burbujaPPA.textContent = `PPA: ${ppa.toFixed(2)}`;
-    burbujaPPA.style.display = "block";
-  } else {
-    burbujaPPA.style.display = "none";
-  }
-}
-
-// --- Calculadora de promedios (modal simple) ---
-function abrirCalculadora() {
-  if (document.getElementById("modalCalculadora")) return;
-
-  const modal = document.createElement("div");
-  modal.id = "modalCalculadora";
-  modal.style.position = "fixed";
-  modal.style.top = "0";
-  modal.style.left = "0";
-  modal.style.width = "100vw";
-  modal.style.height = "100vh";
-  modal.style.backgroundColor = "rgba(0,0,0,0.5)";
-  modal.style.display = "flex";
-  modal.style.justifyContent = "center";
-  modal.style.alignItems = "center";
-  modal.style.zIndex = "10001";
-
-  modal.innerHTML = `
-    <div style="
-      background: white;
-      padding: 24px;
-      border-radius: 16px;
-      width: 320px;
-      max-width: 90vw;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      ">
-      <h2 style="margin-top:0; font-size: 1.5rem;">Calculadora de Promedios</h2>
-      <label>Ramo (código): <input type="text" id="calcCodigo" style="width: 100%; padding: 6px; margin-bottom: 12px;" placeholder="Ej: BIO101"></label>
-      <div id="pruebasContainer" style="max-height: 150px; overflow-y: auto; margin-bottom: 12px;"></div>
-      <button id="agregarPruebaBtn" style="
-        background: #2980b9;
-        color: white;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-bottom: 12px;
-      ">Agregar prueba</button>
-      <div style="margin-bottom: 12px;">
-        <strong>Promedio actual: </strong><span id="promedioCalculado">0.00</span>
-      </div>
-      <button id="guardarPromedioBtn" style="
-        background: #27ae60;
-        color: white;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%;
-        font-weight: 700;
-      ">Guardar Promedio</button>
-      <button id="cerrarModalBtn" style="
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 8px;
-        font-weight: 700;
-      ">Cerrar</button>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  const pruebasContainer = modal.querySelector("#pruebasContainer");
-  const promedioCalculado = modal.querySelector("#promedioCalculado");
-  const calcCodigoInput = modal.querySelector("#calcCodigo");
-
-  // Agrega prueba
-  modal.querySelector("#agregarPruebaBtn").onclick = () => {
-    const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.gap = "8px";
-    div.style.marginBottom = "6px";
-    div.style.alignItems = "center";
-
-    div.innerHTML = `
-      <input type="text" placeholder="Nombre prueba" style="flex:2; padding: 6px;" />
-      <input type="number" placeholder="Nota (0-100)" min="0" max="100" style="flex:1; padding: 6px;" />
-      <input type="number" placeholder="Peso (%)" min="0" max="100" style="flex:1; padding: 6px;" />
-      <button style="background:#e74c3c; color:white; border:none; border-radius:6px; cursor:pointer; flex:0 0 30px;">X</button>
-    `;
-
-    const btnEliminar = div.querySelector("button");
-    btnEliminar.onclick = () => {
-      div.remove();
-      calcularYPintarPromedio();
-    };
-
-    const inputs = div.querySelectorAll("input");
-    inputs.forEach(input => input.oninput = calcularYPintarPromedio);
-
-    pruebasContainer.appendChild(div);
-  };
-
-  // Carga datos previos si existen
-  function cargarDatosPrevios() {
-    const codigo = calcCodigoInput.value.trim();
-    if (codigo && promedios[codigo] !== undefined) {
-      // No guardamos pruebas previas, solo promedio total.
-      promedioCalculado.textContent = promedios[codigo].toFixed(2);
-    } else {
-      promedioCalculado.textContent = "0.00";
-    }
-  }
-
-  calcCodigoInput.oninput = () => {
-    pruebasContainer.innerHTML = "";
-    cargarDatosPrevios();
-  };
-
-  // Calcula promedio basado en pruebas
-  function calcularYPintarPromedio() {
-    const pruebas = Array.from(pruebasContainer.children).map(div => {
-      const inputs = div.querySelectorAll("input");
-      const nombre = inputs[0].value.trim();
-      const nota = parseFloat(inputs[1].value);
-      const peso = parseFloat(inputs[2].value);
-      if (!nombre || isNaN(nota) || isNaN(peso) || nota < 0 || nota > 100 || peso <= 0) return null;
-      return { nombre, nota, peso };
-    }).filter(p => p !== null);
-
-    const totalPeso = pruebas.reduce((acc, cur) => acc + cur.peso, 0);
-    if (totalPeso <= 0) {
-      promedioCalculado.textContent = "0.00";
-      return;
-    }
-    const promedio = pruebas.reduce((acc, cur) => acc + (cur.nota * (cur.peso / 100)), 0);
-    promedioCalculado.textContent = promedio.toFixed(2);
-  }
-
-  modal.querySelector("#guardarPromedioBtn").onclick = async () => {
-    const codigo = calcCodigoInput.value.trim();
-    if (!codigo) {
-      alert("Ingrese el código del ramo");
-      return;
-    }
-    const promedio = parseFloat(promedioCalculado.textContent);
-    if (isNaN(promedio) || promedio <= 0) {
-      alert("Ingrese pruebas válidas para calcular el promedio");
-      return;
-    }
-    await guardarPromedio(codigo, promedio);
-    alert(`Promedio para ${codigo} guardado: ${promedio.toFixed(2)}`);
-    actualizarBurbujaPPA();
-    renderMalla();
-    modal.remove();
-  };
-
-  modal.querySelector("#cerrarModalBtn").onclick = () => {
-    modal.remove();
-  };
-}
-// Crear div para tooltip custom
+// Crear tooltip para créditos, requisitos y promedios
 const tooltip = document.createElement("div");
-tooltip.id = "tooltipInfo";
 tooltip.style.position = "fixed";
 tooltip.style.background = "rgba(0,0,0,0.8)";
 tooltip.style.color = "white";
-tooltip.style.padding = "8px 12px";
-tooltip.style.borderRadius = "8px";
+tooltip.style.padding = "8px 14px";
+tooltip.style.borderRadius = "12px";
 tooltip.style.fontSize = "13px";
 tooltip.style.pointerEvents = "none";
+tooltip.style.transition = "opacity 0.15s ease";
 tooltip.style.zIndex = "10000";
-tooltip.style.maxWidth = "260px";
-tooltip.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+tooltip.style.maxWidth = "280px";
+tooltip.style.opacity = "0";
 tooltip.style.display = "none";
-tooltip.style.transition = "opacity 0.2s ease";
-tooltip.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 document.body.appendChild(tooltip);
 
-// Función para mostrar tooltip con contenido y posición
+// Variables para almacenar los datos del usuario y progreso
+let totalCreditosAprobados = 0;
+
+// Función para mostrar el tooltip
 function mostrarTooltip(event, contenido) {
+  if (appContainer.style.display === "none") return; // No mostrar si no logueado
+
   tooltip.innerHTML = contenido.replace(/\n/g, "<br>");
   tooltip.style.display = "block";
   tooltip.style.opacity = "1";
 
-  // Posicionar tooltip cerca del mouse, ajustando para no salirse de pantalla
-  const padding = 12;
-  let x = event.clientX + padding;
-  let y = event.clientY + padding;
+  let x = event.clientX + 15;
+  let y = event.clientY + 15;
 
   const tooltipRect = tooltip.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const width = tooltipRect.width;
+  const height = tooltipRect.height;
 
-  if (x + tooltipRect.width + padding > viewportWidth) {
-    x = event.clientX - tooltipRect.width - padding;
-  }
-  if (y + tooltipRect.height + padding > viewportHeight) {
-    y = event.clientY - tooltipRect.height - padding;
-  }
+  if (x + width > window.innerWidth) x = event.clientX - width - 15;
+  if (y + height > window.innerHeight) y = event.clientY - height - 15;
 
   tooltip.style.left = x + "px";
   tooltip.style.top = y + "px";
@@ -715,99 +303,401 @@ function ocultarTooltip() {
   tooltip.style.opacity = "0";
   setTimeout(() => {
     tooltip.style.display = "none";
-  }, 200);
+  }, 150);
 }
 
-// Modificar renderMalla para manejar tooltip custom
+// Función para cargar la malla desde Firebase
+async function cargarMalla() {
+  try {
+    const snapshot = await db.collection("malla_medicina").orderBy("semestre").get();
+    datosMalla = snapshot.docs.map(doc => doc.data());
+  } catch (error) {
+    console.error("Error al cargar la malla:", error);
+  }
+}
+
+// Función para cargar el progreso del usuario
+async function cargarProgreso() {
+  if (!usuario) return;
+  try {
+    const doc = await db.collection("progreso_medicina").doc(usuario.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      progreso = data.progreso || {};
+      promedios = data.promedios || {};
+    } else {
+      progreso = {};
+      promedios = {};
+    }
+  } catch (error) {
+    console.error("Error al cargar progreso:", error);
+  }
+}
+
+// Función para guardar progreso
+async function guardarProgreso() {
+  if (!usuario) return;
+  try {
+    await db.collection("progreso_medicina").doc(usuario.uid).set({
+      progreso,
+      promedios
+    }, { merge: true });
+  } catch (error) {
+    console.error("Error al guardar progreso:", error);
+  }
+}
+
+// Función para renderizar la malla en el DOM
 function renderMalla() {
   mallaDiv.innerHTML = "";
-  const semestresMap = new Map();
 
+  // Agrupar por semestre
+  const semestres = {};
   datosMalla.forEach(ramo => {
-    const sems = Array.isArray(ramo.semestre) ? ramo.semestre : [ramo.semestre];
-    sems.forEach(s => {
-      if (!semestresMap.has(s)) semestresMap.set(s, []);
-      semestresMap.get(s).push(ramo);
-    });
+    if (!semestres[ramo.semestre]) semestres[ramo.semestre] = [];
+    semestres[ramo.semestre].push(ramo);
   });
 
-  const semestresOrdenados = Array.from(semestresMap.keys()).sort((a, b) => a - b);
+  for (const semestre in semestres) {
+    const divSem = document.createElement("div");
+    divSem.className = "semestre";
+    divSem.style.border = "1px solid #ccc";
+    divSem.style.borderRadius = "12px";
+    divSem.style.margin = "10px 0";
+    divSem.style.padding = "10px";
+    divSem.style.backgroundColor = "#f9f9f9";
 
-  semestresOrdenados.forEach(semestre => {
-    const divSemestre = document.createElement("div");
-    divSemestre.className = "semestre";
-    divSemestre.style.marginBottom = "20px";
+    const titulo = document.createElement("h3");
+    titulo.textContent = `Semestre ${semestre}`;
+    titulo.style.marginBottom = "12px";
+    titulo.style.color = "#333";
+    divSem.appendChild(titulo);
 
-    const tituloSemestre = document.createElement("h3");
-    tituloSemestre.textContent = `Semestre ${semestre}`;
-    tituloSemestre.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-    tituloSemestre.style.color = "#2575fc";
-    divSemestre.appendChild(tituloSemestre);
-
-    const contenedorRamos = document.createElement("div");
-    contenedorRamos.style.display = "flex";
-    contenedorRamos.style.flexWrap = "wrap";
-    contenedorRamos.style.gap = "8px";
-
-    semestresMap.get(semestre).forEach(ramo => {
+    semestres[semestre].forEach(ramo => {
       const divRamo = document.createElement("div");
       divRamo.className = "ramo";
       divRamo.textContent = `${ramo.codigo} - ${ramo.nombre}`;
-      divRamo.style.padding = "8px 14px";
-      divRamo.style.borderRadius = "12px";
+      divRamo.style.padding = "6px 10px";
+      divRamo.style.marginBottom = "6px";
+      divRamo.style.borderRadius = "8px";
       divRamo.style.cursor = "pointer";
       divRamo.style.userSelect = "none";
-      divRamo.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-      divRamo.style.fontSize = "14px";
-      divRamo.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
 
-      if (progreso[ramo.codigo] === true) {
-        divRamo.style.backgroundColor = "#2ecc71";
+      // Determinar estado y color
+      if (progreso[ramo.codigo]) {
+        divRamo.style.backgroundColor = "#2ecc71"; // Verde aprobado
         divRamo.style.color = "white";
-      } else if (ramoRequisitosCumplidos(ramo)) {
-        divRamo.style.backgroundColor = "#3498db";
+      } else if (seCumplenRequisitos(ramo)) {
+        divRamo.style.backgroundColor = "#3498db"; // Azul desbloqueado
         divRamo.style.color = "white";
       } else {
-        divRamo.style.backgroundColor = "#bdc3c7";
-        divRamo.style.color = "#555";
-        divRamo.style.cursor = "not-allowed";
+        divRamo.style.backgroundColor = "#bdc3c7"; // Gris bloqueado
+        divRamo.style.color = "#444";
       }
 
-      // Removemos el tooltip nativo
-      divRamo.removeAttribute("title");
-
-      // Mostrar tooltip custom al pasar mouse
-      divRamo.addEventListener("mousemove", (e) => {
-        mostrarTooltip(e, generarTooltip(ramo));
+      // Al pasar mouse mostrar tooltip
+      divRamo.addEventListener("mouseenter", (event) => {
+        const texto = generarTooltipTexto(ramo);
+        mostrarTooltip(event, texto);
+      });
+      divRamo.addEventListener("mousemove", (event) => {
+        mostrarTooltip(event, generarTooltipTexto(ramo));
       });
       divRamo.addEventListener("mouseleave", ocultarTooltip);
 
-      // En móviles, mostrar tooltip al tocar (y ocultar después)
-      divRamo.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        mostrarTooltip(e.touches[0], generarTooltip(ramo));
-      });
-      divRamo.addEventListener("touchend", () => {
-        setTimeout(ocultarTooltip, 3000);
-      });
-
-      divRamo.onclick = async () => {
-        if (!ramoRequisitosCumplidos(ramo)) return;
-        progreso[ramo.codigo] = !progreso[ramo.codigo];
-        await guardarProgreso();
+      // Click para marcar/desmarcar aprobado
+      divRamo.addEventListener("click", () => {
+        if (progreso[ramo.codigo]) {
+          delete progreso[ramo.codigo];
+          delete promedios[ramo.codigo];
+        } else {
+          if (seCumplenRequisitos(ramo)) {
+            progreso[ramo.codigo] = true;
+            if (!promedios[ramo.codigo]) {
+              promedios[ramo.codigo] = 4.0; // Promedio por defecto
+            }
+          } else {
+            alert("No puedes marcar este ramo como aprobado, faltan requisitos.");
+            return;
+          }
+        }
+        guardarProgreso();
         renderMalla();
-        await verificarSemestreCompletado();
-        actualizarBurbujaCreditos();
-        actualizarBurbujaPPA();
-      };
+        actualizarCreditosYPromedio();
+        verificarSemestreCompletado();
+      });
 
-      contenedorRamos.appendChild(divRamo);
+      divSem.appendChild(divRamo);
     });
 
-    divSemestre.appendChild(contenedorRamos);
-    mallaDiv.appendChild(divSemestre);
+    mallaDiv.appendChild(divSem);
+  }
+}
+
+// Función para verificar si se cumplen requisitos para un ramo
+function seCumplenRequisitos(ramo) {
+  if (!ramo.requisitos || ramo.requisitos.length === 0) return true;
+
+  return ramo.requisitos.every(req => progreso[req]);
+}
+
+// Función para generar el texto del tooltip
+function generarTooltipTexto(ramo) {
+  const creditos = ramo.creditos || 0;
+  const requisitos = ramo.requisitos && ramo.requisitos.length > 0 ? ramo.requisitos.join(", ") : "Ninguno";
+  const promedio = promedios[ramo.codigo] !== undefined ? promedios[ramo.codigo].toFixed(2) : "N/A";
+
+  return `
+    Créditos: ${creditos}
+    Requisitos: ${requisitos}
+    Promedio: ${promedio}
+  `;
+}
+
+// Actualizar contador de créditos y PPA
+function actualizarCreditosYPromedio() {
+  let sumaCreditos = 0;
+  let sumaPonderada = 0;
+
+  for (const ramoCodigo in progreso) {
+    const ramo = datosMalla.find(r => r.codigo === ramoCodigo);
+    if (ramo) {
+      const creditos = ramo.creditos || 0;
+      const promedio = promedios[ramoCodigo] || 0;
+      sumaCreditos += creditos;
+      sumaPonderada += promedio * creditos;
+    }
+  }
+
+  totalCreditosAprobados = sumaCreditos;
+  burbujaCreditos.textContent = `Créditos aprobados: ${sumaCreditos}`;
+  const ppa = sumaCreditos ? (sumaPonderada / sumaCreditos).toFixed(2) : "0.00";
+  burbujaPPA.textContent = `PPA: ${ppa}`;
+}
+
+// --- Calculadora de Promedios ---
+
+function abrirCalculadora() {
+  if (document.getElementById("modalCalc")) return; // ya abierta
+
+  const modal = document.createElement("div");
+  modal.id = "modalCalc";
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.width = "100vw";
+  modal.style.height = "100vh";
+  modal.style.backgroundColor = "rgba(0,0,0,0.6)";
+  modal.style.display = "flex";
+  modal.style.justifyContent = "center";
+  modal.style.alignItems = "center";
+  modal.style.zIndex = "10001";
+
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:24px; max-width:400px; width:90%; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <h2 style="margin-top:0; color:#3498db;">Calculadora de Promedios</h2>
+      <label for="inputRamo">Código ramo:</label>
+      <input type="text" id="inputRamo" style="width:100%; padding:8px; margin-bottom:12px;" placeholder="Ej: ANAT101" />
+      <div id="pruebasContainer"></div>
+      <button id="agregarPruebaBtn" style="margin-bottom:12px; background:#3498db; color:white; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;">Agregar prueba</button>
+      <div style="display:flex; justify-content: space-between; align-items:center;">
+        <button id="calcularPromedioBtn" style="background:#2ecc71; color:white; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;">Calcular</button>
+        <button id="cerrarModalBtn" style="background:#e74c3c; color:white; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;">Cerrar</button>
+      </div>
+      <div id="resultadoPromedio" style="margin-top:16px; font-weight:bold; font-size:1.1rem;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const pruebasContainer = modal.querySelector("#pruebasContainer");
+  const inputRamo = modal.querySelector("#inputRamo");
+  const agregarPruebaBtn = modal.querySelector("#agregarPruebaBtn");
+  const calcularPromedioBtn = modal.querySelector("#calcularPromedioBtn");
+  const cerrarModalBtn = modal.querySelector("#cerrarModalBtn");
+  const resultadoPromedio = modal.querySelector("#resultadoPromedio");
+
+  function agregarPrueba(carga = "", peso = "") {
+    const div = document.createElement("div");
+    div.style.marginBottom = "8px";
+    div.innerHTML = `
+      <input type="number" class="nota" placeholder="Nota (0-7)" min="0" max="7" step="0.01" style="width:48%; padding:6px;" value="${carga}" />
+      <input type="number" class="peso" placeholder="% Peso" min="0" max="100" step="0.01" style="width:48%; padding:6px; margin-left:4%;" value="${peso}" />
+    `;
+    pruebasContainer.appendChild(div);
+  }
+
+  agregarPrueba();
+
+  agregarPruebaBtn.onclick = () => agregarPrueba();
+
+  calcularPromedioBtn.onclick = () => {
+    const notas = Array.from(pruebasContainer.querySelectorAll(".nota")).map(i => parseFloat(i.value));
+    const pesos = Array.from(pruebasContainer.querySelectorAll(".peso")).map(i => parseFloat(i.value));
+    const ramoCod = inputRamo.value.trim().toUpperCase();
+
+    if (!ramoCod) {
+      alert("Debes ingresar un código de ramo válido.");
+      return;
+    }
+
+    if (notas.some(n => isNaN(n) || n < 0 || n > 7) || pesos.some(p => isNaN(p) || p < 0 || p > 100)) {
+      alert("Las notas deben estar entre 0 y 7 y los pesos entre 0 y 100.");
+      return;
+    }
+
+    const sumaPesos = pesos.reduce((a,b) => a+b, 0);
+    if (sumaPesos <= 0) {
+      alert("La suma de pesos debe ser mayor que 0.");
+      return;
+    }
+
+    let promedio = 0;
+    for (let i = 0; i < notas.length; i++) {
+      promedio += (notas[i] * (pesos[i] / sumaPesos));
+    }
+    promedio = promedio.toFixed(2);
+
+    resultadoPromedio.textContent = `Promedio calculado para ${ramoCod}: ${promedio}`;
+
+    // Guardar promedio y actualizar UI
+    promedios[ramoCod] = parseFloat(promedio);
+    guardarProgreso();
+    renderMalla();
+    actualizarCreditosYPromedio();
+  };
+
+  cerrarModalBtn.onclick = () => {
+    modal.remove();
+  };
+}
+
+// Función para ocultar todos los elementos de la app y mostrar solo login
+function ocultarElementosApp() {
+  appContainer.style.display = "none";
+  loginContainer.style.display = "block";
+  burbujaCreditos.style.display = "none";
+  burbujaPPA.style.display = "none";
+  iconoCalc.style.display = "none";
+  leyenda.style.display = "none";
+  tooltip.style.display = "none";
+  burbujaFelicitacion.style.display = "none";
+  confetiCanvas.style.display = "none";
+}
+
+// Al inicio ocultamos todo excepto login
+ocultarElementosApp();
+
+// Manejo del login con Firebase
+loginBtn.addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!email || !password) {
+    alert("Ingresa email y contraseña.");
+    return;
+  }
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (error) {
+    alert("Error al iniciar sesión: " + error.message);
+  }
+});
+
+// Estado de autenticación
+auth.onAuthStateChanged(async (user) => {
+  console.log("Auth State Changed:", user);
+  if (user) {
+    usuario = user;
+    loginContainer.style.display = "none";
+    appContainer.style.display = "block";
+    burbujaCreditos.style.display = "block";
+    burbujaPPA.style.display = "block";
+    iconoCalc.style.display = "flex";
+    leyenda.style.display = "block";
+
+    try {
+      await cargarMalla();
+      await cargarProgreso();
+      await cargarSemestresFelic();
+      renderMalla();
+      actualizarCreditosYPromedio();
+      await verificarSemestreCompletado();
+    } catch (error) {
+      console.error("Error en carga o renderizado:", error);
+    }
+  } else {
+    usuario = null;
+    ocultarElementosApp();
+    datosMalla = [];
+    progreso = {};
+    promedios = {};
+    semestresFelic = {};
+    mallaDiv.innerHTML = "";
+    resumen.textContent = "";
+  }
+});
+
+// --- Código para confeti ---
+
+let confetiCtx;
+let confetiParticles = [];
+let confetiAnimationId;
+
+function iniciarConfeti() {
+  confetiCanvas.width = window.innerWidth;
+  confetiCanvas.height = window.innerHeight;
+  confetiCtx = confetiCanvas.getContext("2d");
+
+  confetiParticles = [];
+  const colores = ["#FFC700", "#FF0000", "#2E3192", "#41BBC7", "#E94368", "#16A085", "#3498DB", "#9B59B6"];
+  for (let i = 0; i < 150; i++) {
+    confetiParticles.push({
+      x: Math.random() * confetiCanvas.width,
+      y: Math.random() * confetiCanvas.height - confetiCanvas.height,
+      r: (Math.random() * 6) + 4,
+      d: (Math.random() * 30) + 10,
+      color: colores[Math.floor(Math.random() * colores.length)],
+      tilt: Math.floor(Math.random() * 10) - 10,
+      tiltAngle: 0,
+      tiltAngleIncremental: (Math.random() * 0.07) + 0.05,
+    });
+  }
+  animarConfeti();
+}
+
+function animarConfeti() {
+  confetiCtx.clearRect(0, 0, confetiCanvas.width, confetiCanvas.height);
+  confetiParticles.forEach((p) => {
+    confetiCtx.beginPath();
+    confetiCtx.lineWidth = p.r / 2;
+    confetiCtx.strokeStyle = p.color;
+    confetiCtx.moveTo(p.x + p.tilt + (p.r / 4), p.y);
+    confetiCtx.lineTo(p.x + p.tilt, p.y + p.tilt + (p.r / 4));
+    confetiCtx.stroke();
+
+    p.tiltAngle += p.tiltAngleIncremental;
+    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+    p.x += Math.sin(p.d);
+    p.tilt = Math.sin(p.tiltAngle) * 15;
+
+    if (p.y > confetiCanvas.height) {
+      p.x = Math.random() * confetiCanvas.width;
+      p.y = -10;
+      p.tilt = Math.floor(Math.random() * 10) - 10;
+    }
   });
 
-  actualizarBurbujaCreditos();
-  actualizarBurbujaPPA();
+  confetiAnimationId = requestAnimationFrame(animarConfeti);
+}
+
+function detenerConfeti() {
+  cancelAnimationFrame(confetiAnimationId);
+  confetiCtx.clearRect(0, 0, confetiCanvas.width, confetiCanvas.height);
+}
+
+// DEBUG móvil
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+  console.log("Modo móvil detectado");
 }
