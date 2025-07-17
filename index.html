@@ -44,10 +44,52 @@
     </div>
   </aside>
 
+  <!-- Burbuja de créditos flotante -->
+  <div id="creditos-flotante" class="burbuja-flotante" aria-label="Créditos aprobados">Créditos: 0</div>
+
+  <!-- Burbuja de PPA flotante -->
+  <div id="ppa-flotante" class="burbuja-flotante" aria-label="Promedio ponderado acumulado">PPA: --</div>
+
+  <!-- Botón flotante: ¿Qué puedo tomar? -->
+  <button id="btn-tomables" class="boton-flotante" title="Ver ramos habilitados">¿Qué puedo tomar?</button>
+
+  <!-- Modal de ramos habilitados -->
+  <div id="modal-tomables" class="modal" hidden>
+    <div class="modal-contenido">
+      <span class="cerrar-modal" id="cerrar-modal">&times;</span>
+      <h3>Ramos habilitados para tomar 🎯</h3>
+      <ul id="lista-tomables"></ul>
+    </div>
+  </div>
+
+  <!-- Botón calculadora de promedios -->
+  <button id="btn-calculadora" class="boton-flotante calculadora" title="Calculadora de promedios">📊</button>
+
+  <!-- Modal de calculadora -->
+  <div id="modal-calculadora" class="modal" hidden>
+    <div class="modal-contenido">
+      <span class="cerrar-modal" id="cerrar-modal-calculadora">&times;</span>
+      <h3>Calculadora de promedios</h3>
+      <form id="form-calculadora">
+        <label for="asignatura-select">Asignatura:</label>
+        <select id="asignatura-select"></select>
+        <div id="pruebas-container"></div>
+        <button type="button" id="agregar-prueba">➕ Agregar prueba</button>
+        <button type="submit">💾 Guardar promedio</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confeti -->
+  <canvas id="confetti-canvas" style="position: fixed; pointer-events: none; top: 0; left: 0; width: 100%; height: 100%; z-index: 999;"></canvas>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- Script de confeti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <!-- Script principal -->
   <script src="main.js" defer></script>
